@@ -1,74 +1,111 @@
-Parliament SecureChat
+# 🏛️ Parliament SecureChat
 
-A secure, real-time chat application designed for parliamentary communication. The platform combines a modern React frontend with a FastAPI backend to support authenticated messaging, role-based access, and administrative oversight.
+End-to-end encrypted chat for the **House of Peoples' Representatives of the FDRE**  
 
-Overview
-This application provides:
-- secure authentication
-- real-time chat
-- role-based access control
-- encrypted message handling
-- admin monitoring tools
 
-Technology Stack
+---
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | React, Vite, WebSocket, Web Crypto API |
-| Backend | FastAPI, SQLite, JWT, bcrypt, Uvicorn |
+## What it does
 
-Project Structure
+Real-time secure messaging where the server **never reads your messages**. Each user holds half an encryption key (ECDH). The shared secret is derived mathematically — never transmitted. Built with React + FastAPI.
 
-parliament-chat/
-├── backend/
-│   ├── main.py
-│   ├── requirements.txt
-│   └── tests/
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── components/
-│   │   └── hooks/
-│   ├── package.json
-│   └── vite.config.js
-├── screenshots/
-│   ├── login-screen.svg
-│   ├── chat-screen.svg
-│   └── admin-dashboard.svg
-└── README.md
+---
 
-Screenshots
+## Stack
 
-The following placeholder screenshots are available in the screenshots folder:
-- Login screen: screenshots/login-screen.svg
-- Chat interface: screenshots/chat-screen.svg
-- Admin dashboard: screenshots/admin-dashboard.svg
+| Side | Tech |
+|---|---|
+| Frontend | React, Vite, Tailwind, Web Crypto API, WebSocket |
+| Backend | FastAPI, SQLite, bcrypt, JWT, Uvicorn |
 
-Setup
+---
 
-Backend
+## Setup
+
+**Backend**
 ```bash
 cd backend
-pip install -r requirements.txt
+pip install fastapi uvicorn cryptography python-multipart websockets bcrypt "python-jose[cryptography]"
 python -m uvicorn main:app --reload
 ```
 
-Frontend
+**Frontend**
 ```bash
 cd frontend
 pnpm install
 pnpm run dev
 ```
 
-Default Admin Account
-- Email: admin@parliament.gov.et
-- Password: Admin@Parliament1
+**Default admin**
+```
+Email:    admin@parliament.gov.et
+Password: Admin@Parliament1
+```
 
-Usage Notes
-- The frontend runs on http://localhost:5173
-- The backend runs on http://localhost:8000
-- Admin approval is required for new user accounts
+---
 
-Author
-Akotet Shimelis
-https://github.com/akotet27
+## How encryption works
+
+```
+Akotet  →  private key (a) + public key (A) → uploads A to server
+Shimelis → private key (b) + public key (B) → uploads B to server
+
+Akotet sends to Shimelis:
+  SharedKey = ECDH(a, B)   ← Akotet's half + Shimelis's half
+
+Shimelis receives:
+  SharedKey = ECDH(b, A)   ← same key, different halves
+
+Server stores: "gAAAAABk7xPmQr..."  ← unreadable ciphertext only
+```
+
+Neither half alone can decrypt anything. The server is completely blind.
+
+---
+
+## Features
+
+- 🔐 ECDH end-to-end encryption (P-256 + AES-GCM)
+- ⏱️ Auto logout after 2 minutes of inactivity
+- 👤 Admin approval required for all accounts
+- 💬 Group channel + private DMs + My Notes (chat with yourself)
+- ✏️ Edit and delete messages
+- 🌙 Dark / light mode
+- 📱 Responsive (mobile, tablet, desktop)
+- 🛡️ Admin dashboard with activity log
+
+---
+
+## User roles
+
+| Role | Access |
+|---|---|
+| `pending` | Registered, awaiting approval |
+| `member` | Full chat access |
+| `admin` | User management dashboard |
+| `suspended` | Blocked |
+
+---
+
+## Validation rules
+
+| Field | Rule |
+|---|---|
+| Username | 2–20 chars, letters/numbers/underscore |
+| Email | Valid format with domain |
+| Phone | 7–15 digits, international format |
+| Password | Min 8 chars + uppercase + lowercase + number + special char |
+
+---
+
+## Screenshots
+
+![Parliament chat preview](frontend/src/assets/hero.png)
+
+![Parliament logo](frontend/public/parliament-logo.png)
+
+---
+
+## Author
+
+**Akotet Shimelis** · [@akotet27](https://github.com/akotet27)

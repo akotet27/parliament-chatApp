@@ -53,10 +53,7 @@ parliament-chat/
 │   ├── package.json
 │   ├── vite.config.js
 │   └── eslint.config.js
-├── screenshots/
-│   ├── login-screen.svg
-│   ├── chat-screen.svg
-│   └── admin-dashboard.svg
+|
 └── README.md
 ```
 
