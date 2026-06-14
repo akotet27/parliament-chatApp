@@ -4,67 +4,32 @@ import LoginScreen from './components/LoginScreen'
 import RegisterScreen from './components/RegisterScreen'
 import AdminDashboard from './components/AdminDashboard'
 import ChatRoom from './components/ChatRoom'
-import { keyStore } from './crypto/e2e'
-import { Shield, Clock } from 'lucide-react'
+import { Shield } from 'lucide-react'
 
-// ── Loading screen ─────────────────────────────────────
 function LoadingScreen() {
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center"
-      style={{ background: '#030712' }}
-    >
-      <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: 'linear-gradient(135deg, #1D4ED8, #7C3AED)' }}
-      >
-        <Shield className="w-8 h-8 text-white"/>
-      </div>
-      <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4"/>
-      <p className="text-sm" style={{ color: '#6B7280' }}>
-        Establishing secure session...
-      </p>
+    <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui' }}>
+      <img src="/parliament-logo.png" alt="Parliament" style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '20px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+      <div style={{ width: '32px', height: '32px', border: '3px solid #e2e8f0', borderTop: '3px solid #1d4ed8', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '16px' }} />
+      <p style={{ fontSize: '14px', color: '#64748b' }}>Establishing secure session...</p>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.7;transform:scale(0.95)} }
+      `}</style>
     </div>
   )
 }
 
-// ── Pending approval screen ────────────────────────────
 function PendingScreen({ onLogout }) {
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: '#030712' }}
-    >
-      <div className="w-full max-w-sm text-center">
-        <div
-          className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
-          style={{ background: '#D9770622', border: '1px solid #D9770644' }}
-        >
-          <Clock className="w-10 h-10 text-amber-400"/>
-        </div>
-        <h2 className="text-2xl font-black text-white mb-2">
-          Awaiting Approval
-        </h2>
-        <p className="text-sm mb-6" style={{ color: '#6B7280' }}>
-          Your account has been created and is pending
-          admin approval. You will be able to access
-          Parliament SecureChat once approved.
+    <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui' }}>
+      <div style={{ textAlign: 'center', maxWidth: '400px', padding: '24px' }}>
+        <img src="/parliament-logo.png" alt="Parliament" style={{ width: '80px', marginBottom: '24px' }} />
+        <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#0f2444', margin: '0 0 12px' }}>Awaiting Approval</h2>
+        <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 24px', lineHeight: 1.7 }}>
+          Your account is pending admin approval. You will be able to access Parliament SecureChat once approved.
         </p>
-        <div
-          className="rounded-2xl p-4 mb-6 border"
-          style={{ background: '#111827', borderColor: '#1F2937' }}
-        >
-          <p className="text-xs" style={{ color: '#6B7280' }}>
-            An administrator will review your request.
-            Please contact your parliament office if
-            you need urgent access.
-          </p>
-        </div>
-        <button
-          onClick={onLogout}
-          className="text-sm font-medium hover:underline"
-          style={{ color: '#60A5FA' }}
-        >
+        <button onClick={onLogout} style={{ background: 'none', border: 'none', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>
           Back to login
         </button>
       </div>
@@ -72,32 +37,14 @@ function PendingScreen({ onLogout }) {
   )
 }
 
-// ── Suspended screen ───────────────────────────────────
 function SuspendedScreen({ onLogout }) {
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: '#030712' }}
-    >
-      <div className="w-full max-w-sm text-center">
-        <div
-          className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
-          style={{ background: '#DC262622', border: '1px solid #DC262644' }}
-        >
-          <Shield className="w-10 h-10 text-red-400"/>
-        </div>
-        <h2 className="text-2xl font-black text-white mb-2">
-          Account Suspended
-        </h2>
-        <p className="text-sm mb-6" style={{ color: '#6B7280' }}>
-          Your access to Parliament SecureChat has been
-          suspended. Please contact your administrator.
-        </p>
-        <button
-          onClick={onLogout}
-          className="text-sm font-medium hover:underline"
-          style={{ color: '#60A5FA' }}
-        >
+    <div style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui' }}>
+      <div style={{ textAlign: 'center', maxWidth: '400px', padding: '24px' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚫</div>
+        <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#0f2444', margin: '0 0 12px' }}>Account Suspended</h2>
+        <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 24px' }}>Your access has been suspended. Contact administrator.</p>
+        <button onClick={onLogout} style={{ background: 'none', border: 'none', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}>
           Back to login
         </button>
       </div>
@@ -105,20 +52,18 @@ function SuspendedScreen({ onLogout }) {
   )
 }
 
-// ── Main App ───────────────────────────────────────────
 function App() {
-  const [screen, setScreen]         = useState('login')
+  const [screen, setScreen] = useState('login')
   const [appLoading, setAppLoading] = useState(true)
   const [logoutReason, setLogoutReason] = useState('')
-
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('parliament_dark') === 'true')
   const auth = useAuth()
 
-  // Check for existing session on load
   useEffect(() => {
     const token = sessionStorage.getItem('parliament_token')
     if (token) {
       auth.fetchMe()
-        .then(user => {
+        .then((user) => {
           if (user) {
             setScreen('chat')
           } else {
@@ -131,44 +76,44 @@ function App() {
     }
   }, [])
 
-  // Update screen based on user role
   useEffect(() => {
     if (!auth.user) return
-    if (auth.user.role === 'admin')     setScreen('admin')
-    else if (auth.user.role === 'member')    setScreen('chat')
-    else if (auth.user.role === 'pending')   setScreen('pending')
+    if (auth.user.role === 'admin') setScreen('admin')
+    else if (auth.user.role === 'member') setScreen('chat')
+    else if (auth.user.role === 'pending') setScreen('pending')
     else if (auth.user.role === 'suspended') setScreen('suspended')
   }, [auth.user])
 
-  const handleLogin = async (email, password) => {
-    const result = await auth.login(email, password)
-    return result
+  const toggleDark = () => {
+    const next = !darkMode
+    setDarkMode(next)
+    localStorage.setItem('parliament_dark', String(next))
   }
 
+  const handleLogin = async (email, password) => auth.login(email, password)
   const handleRegister = async (formData) => {
     const result = await auth.register(formData)
-    if (result.success) {
-      setScreen('registered')
-    }
+    if (result.success) setScreen('registered')
     return result
   }
-
   const handleLogout = async (reason = 'manual') => {
     setLogoutReason(reason)
     await auth.logout(reason)
     setScreen('login')
   }
 
-  if (appLoading) return <LoadingScreen/>
+  if (appLoading) return <LoadingScreen />
 
   return (
-    <>
+    <div style={{ colorScheme: darkMode ? 'dark' : 'light' }}>
       {/* Inactivity logout toast */}
       {logoutReason === 'inactivity' && screen === 'login' && (
-        <div
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-xl"
-          style={{ background: '#7F1D1D', color: '#FCA5A5', border: '1px solid #EF4444' }}
-        >
+        <div style={{
+          position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9999, background: '#7F1D1D', color: '#FCA5A5',
+          border: '1px solid #EF4444', borderRadius: '10px',
+          padding: '10px 20px', fontSize: '13px', fontWeight: 500,
+        }}>
           ⏱️ Session expired due to inactivity
         </div>
       )}
@@ -179,6 +124,8 @@ function App() {
           onGoToRegister={() => setScreen('register')}
           loading={auth.loading}
           error={auth.error}
+          darkMode={darkMode}
+          onToggleDark={toggleDark}
         />
       )}
 
@@ -188,54 +135,69 @@ function App() {
           onGoToLogin={() => setScreen('login')}
           loading={auth.loading}
           error={auth.error}
+          darkMode={darkMode}
+          onToggleDark={toggleDark}
         />
       )}
 
       {screen === 'registered' && (
-        <div
-          className="min-h-screen flex items-center justify-center p-4"
-          style={{ background: '#030712' }}
-        >
-          <div className="w-full max-w-sm text-center">
-            <div
-              className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
-              style={{ background: '#05966922', border: '1px solid #05966944' }}
-            >
-              <Shield className="w-10 h-10 text-green-400"/>
-            </div>
-            <h2 className="text-2xl font-black text-white mb-2">
-              Registration Successful!
-            </h2>
-            <p className="text-sm mb-6" style={{ color: '#6B7280' }}>
-              Your account has been created. An administrator
-              will review and approve your access.
+        <div style={{
+          background: darkMode ? '#0f172a' : '#f8fafc',
+          minHeight: '100vh', fontFamily: 'system-ui',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <nav style={{
+            background: darkMode ? '#1e293b' : '#fff',
+            borderBottom: `1px solid ${darkMode ? '#334155' : '#e2e8f0'}`,
+            padding: '12px 48px', display: 'flex', alignItems: 'center', gap: '12px',
+          }}>
+            <img src="/parliament-logo.png" alt="Parliament" style={{ width: '44px', height: '44px', objectFit: 'contain' }} />
+            <p style={{ fontSize: '13px', fontWeight: 800, color: darkMode ? '#e2e8f0' : '#1e3a5f', margin: 0 }}>
+              Parliament SecureChat
             </p>
-            <button
-              onClick={() => {
-                auth.setError('')
-                setScreen('login')
-              }}
-              className="w-full py-3 rounded-xl font-bold text-sm"
-              style={{ background: 'linear-gradient(135deg, #1D4ED8, #7C3AED)', color: '#fff' }}
-            >
-              Go to Login
-            </button>
+          </nav>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+            <div style={{ textAlign: 'center', maxWidth: '440px' }}>
+              <div style={{ fontSize: '56px', marginBottom: '20px' }}>✅</div>
+              <h2 style={{ fontSize: '26px', fontWeight: 900, color: darkMode ? '#f1f5f9' : '#0f2444', margin: '0 0 12px' }}>
+                Registration Successful!
+              </h2>
+              <p style={{ fontSize: '14px', color: darkMode ? '#94a3b8' : '#64748b', margin: '0 0 24px', lineHeight: 1.7 }}>
+                Your account has been created. An administrator will review and approve your access to Parliament SecureChat.
+              </p>
+              <div style={{
+                background: darkMode ? '#422006' : '#fffbeb',
+                border: `1px solid ${darkMode ? '#854d0e' : '#fde68a'}`,
+                borderRadius: '12px', padding: '14px 16px', marginBottom: '24px',
+              }}>
+                <p style={{ fontSize: '13px', color: darkMode ? '#fde68a' : '#92400e', margin: 0 }}>
+                  ⏳ Contact your parliament office for urgent access.
+                </p>
+              </div>
+              <button
+                onClick={() => { auth.setError(''); setScreen('login') }}
+                style={{
+                  padding: '13px 32px', background: '#1d4ed8', color: '#fff',
+                  border: 'none', borderRadius: '10px', fontSize: '14px',
+                  fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Go to Login
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {screen === 'pending' && (
-        <PendingScreen onLogout={handleLogout}/>
-      )}
-
-      {screen === 'suspended' && (
-        <SuspendedScreen onLogout={handleLogout}/>
-      )}
+      {screen === 'pending' && <PendingScreen onLogout={handleLogout} />}
+      {screen === 'suspended' && <SuspendedScreen onLogout={handleLogout} />}
 
       {screen === 'admin' && auth.user && (
         <AdminDashboard
           onLogout={handleLogout}
           auth={auth}
+          darkMode={darkMode}
+          onToggleDark={toggleDark}
         />
       )}
 
@@ -244,9 +206,11 @@ function App() {
           user={auth.user}
           onLogout={handleLogout}
           fetchPublicKey={auth.fetchPublicKey}
+          darkMode={darkMode}
+          onToggleDark={toggleDark}
         />
       )}
-    </>
+    </div>
   )
 }
 
