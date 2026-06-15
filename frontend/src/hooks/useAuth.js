@@ -8,8 +8,7 @@ import { useState, useCallback } from 'react'
 import axios from 'axios'
 import { setupEncryption, keyStore } from '../crypto/e2e'
 
-const API = 'https://your-render-url.onrender.com/api'
-// Axios instance with auth token
+const API = 'https://parliament-chatapp-1.onrender.com/api'// Axios instance with auth token
 const api = axios.create({ baseURL: API })
 
 // Attach token to every request automatically
