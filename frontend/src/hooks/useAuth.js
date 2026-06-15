@@ -8,8 +8,7 @@ import { useState, useCallback } from 'react'
 import axios from 'axios'
 import { setupEncryption, keyStore } from '../crypto/e2e'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-
+const API = 'https://your-render-url.onrender.com/api'
 // Axios instance with auth token
 const api = axios.create({ baseURL: API })
 

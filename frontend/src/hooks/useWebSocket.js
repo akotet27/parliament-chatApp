@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { keyStore } from '../crypto/e2e'
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws'
-
+const WS_URL = 'wss://your-render-url.onrender.com/ws'
 // Simple XOR encryption for group messages
 // Both sides use the same key derived from a shared secret
 const GROUP_KEY = 'parliament-group-2026'
