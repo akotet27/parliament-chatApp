@@ -1,0 +1,7 @@
+{
+  "name": "parliament-chat",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && pnpm install && pnpm run build"
+  }
+}
