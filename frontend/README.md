@@ -57,23 +57,6 @@ parliament-chat/
 └── README.md
 ```
 
----
-
-## Screenshots
-
-**Login Screen**
-
-![Login Screen](../screenshots/login-screen.svg)
-
-**Chat Interface**
-
-![Chat Interface](../screenshots/chat-screen.svg)
-
-**Admin Dashboard**
-
-![Admin Dashboard](../screenshots/admin-dashboard.svg)
-
----
 
 ## Setup
 
