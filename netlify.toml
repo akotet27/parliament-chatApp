@@ -1,7 +1,3 @@
 [build]
-  base    = "frontend"
-  command = "pnpm run build"
+  command = "cd frontend && pnpm run build"
   publish = "frontend/dist"
-
-[build.environment]
-  NODE_VERSION = "20"
