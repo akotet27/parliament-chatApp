@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
@@ -8,6 +8,7 @@ import json
 import sqlite3
 import bcrypt
 import uuid
+import base64
 from jose import JWTError, jwt
 
 app = FastAPI(title="Parliament SecureChat")
@@ -77,6 +78,37 @@ def init_db():
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # Files table
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS files (
+            id          TEXT PRIMARY KEY,
+            uploader_id TEXT NOT NULL,
+            filename    TEXT NOT NULL,
+            mimetype    TEXT,
+            size        INTEGER,
+            data        TEXT NOT NULL,
+            created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Friend / connection requests
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS friend_requests (
+            id           TEXT PRIMARY KEY,
+            from_user_id TEXT NOT NULL,
+            to_user_id   TEXT NOT NULL,
+            status       TEXT DEFAULT 'pending',
+            created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(from_user_id, to_user_id)
+        )
+    """)
+
+    # Migration: add message_type column if missing
+    try:
+        c.execute("ALTER TABLE messages ADD COLUMN message_type TEXT DEFAULT 'text'")
+    except Exception:
+        pass
 
     # Create default admin if not exists
     admin_exists = conn.execute(
@@ -172,6 +204,9 @@ class MessageModel(BaseModel):
     receiver: Optional[str] = None
     room: Optional[str] = "general"
     is_dm: Optional[bool] = False
+
+class FriendRequestModel(BaseModel):
+    to_username: str
 
 # ── CONNECTION MANAGER ───────────────────────────────────
 class ConnectionManager:
@@ -411,6 +446,117 @@ def get_members(user=Depends(get_current_user)):
     conn.close()
     return [dict(r) for r in rows]
 
+# ── FILE ENDPOINTS ──────────────────────────────────────
+
+@app.post("/api/upload")
+async def upload_file(file: UploadFile = File(...), user=Depends(get_current_user)):
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 5MB)")
+    file_id = str(uuid.uuid4())
+    data_b64 = base64.b64encode(content).decode()
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO files (id, uploader_id, filename, mimetype, size, data) VALUES (?, ?, ?, ?, ?, ?)",
+        (file_id, user["id"], file.filename, file.content_type, len(content), data_b64)
+    )
+    conn.commit()
+    conn.close()
+    return {"file_id": file_id, "filename": file.filename, "mimetype": file.content_type, "size": len(content)}
+
+@app.get("/api/files/{file_id}")
+def get_file(file_id: str, user=Depends(get_current_user)):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM files WHERE id=?", (file_id,)).fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="File not found")
+    return {"file_id": row["id"], "filename": row["filename"], "mimetype": row["mimetype"], "size": row["size"], "data": row["data"]}
+
+# ── FRIEND / CONNECTION REQUEST ENDPOINTS ────────────────
+
+@app.post("/api/friends/request")
+async def send_friend_request(data: FriendRequestModel, user=Depends(get_current_user)):
+    conn = get_db()
+    to_user = conn.execute("SELECT id FROM users WHERE username=?", (data.to_username,)).fetchone()
+    if not to_user:
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+    if to_user["id"] == user["id"]:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Cannot send request to yourself")
+    existing = conn.execute(
+        "SELECT id FROM friend_requests WHERE from_user_id=? AND to_user_id=? AND status='pending'",
+        (user["id"], to_user["id"])
+    ).fetchone()
+    if existing:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Request already sent")
+    req_id = str(uuid.uuid4())
+    try:
+        conn.execute(
+            "INSERT INTO friend_requests (id, from_user_id, to_user_id) VALUES (?, ?, ?)",
+            (req_id, user["id"], to_user["id"])
+        )
+        conn.commit()
+    except Exception:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Request already exists")
+    conn.close()
+    await manager.send_to(to_user["id"], {
+        "type": "friend_request",
+        "request_id": req_id,
+        "from_username": user["username"]
+    })
+    return {"message": "Connection request sent", "request_id": req_id}
+
+@app.get("/api/friends/requests")
+def get_friend_requests(user=Depends(get_current_user)):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT fr.id, u.username as from_username, fr.created_at
+        FROM friend_requests fr
+        JOIN users u ON fr.from_user_id = u.id
+        WHERE fr.to_user_id=? AND fr.status='pending'
+        ORDER BY fr.created_at DESC
+    """, (user["id"],)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+@app.put("/api/friends/requests/{request_id}/accept")
+async def accept_friend_request(request_id: str, user=Depends(get_current_user)):
+    conn = get_db()
+    req = conn.execute(
+        "SELECT * FROM friend_requests WHERE id=? AND to_user_id=?",
+        (request_id, user["id"])
+    ).fetchone()
+    if not req:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Request not found")
+    conn.execute("UPDATE friend_requests SET status='accepted' WHERE id=?", (request_id,))
+    conn.commit()
+    conn.close()
+    await manager.send_to(req["from_user_id"], {
+        "type": "friend_request_accepted",
+        "by_username": user["username"]
+    })
+    return {"message": "Connection request accepted"}
+
+@app.put("/api/friends/requests/{request_id}/reject")
+async def reject_friend_request(request_id: str, user=Depends(get_current_user)):
+    conn = get_db()
+    req = conn.execute(
+        "SELECT * FROM friend_requests WHERE id=? AND to_user_id=?",
+        (request_id, user["id"])
+    ).fetchone()
+    if not req:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Request not found")
+    conn.execute("UPDATE friend_requests SET status='rejected' WHERE id=?", (request_id,))
+    conn.commit()
+    conn.close()
+    return {"message": "Connection request rejected"}
+
 # ── WEBSOCKET ────────────────────────────────────────────
 
 @app.websocket("/ws/{token}")
@@ -480,6 +626,22 @@ async def websocket_endpoint(ws: WebSocket, token: str):
         "type": "history",
         "messages": [dict(h) for h in reversed(history)]
     })
+
+    # Send pending connection requests
+    conn = get_db()
+    pending_reqs = conn.execute("""
+        SELECT fr.id, u.username as from_username, fr.created_at
+        FROM friend_requests fr
+        JOIN users u ON fr.from_user_id = u.id
+        WHERE fr.to_user_id=? AND fr.status='pending'
+        ORDER BY fr.created_at DESC
+    """, (user_id,)).fetchall()
+    conn.close()
+    if pending_reqs:
+        await manager.send_to(user_id, {
+            "type": "pending_friend_requests",
+            "requests": [dict(r) for r in pending_reqs]
+        })
 
     try:
         while True:
@@ -624,6 +786,47 @@ async def websocket_endpoint(ws: WebSocket, token: str):
                         "messages": [dict(h) for h in history]
                     })
                 conn.close()
+
+            # ── FILE MESSAGE ──────────────────────────
+            elif msg_type == "file_message":
+                file_id    = data.get("file_id", "")
+                filename   = data.get("filename", "file")
+                mimetype   = data.get("mimetype", "")
+                to_user    = data.get("to")
+                timestamp  = data.get("timestamp", "")
+                msg_id     = str(uuid.uuid4())
+                stored_ref = f"__FILE__{file_id}__{filename}__{mimetype}"
+
+                if to_user:
+                    conn = get_db()
+                    receiver = conn.execute(
+                        "SELECT id FROM users WHERE username=?", (to_user,)
+                    ).fetchone()
+                    if receiver:
+                        conn.execute("""
+                            INSERT INTO messages
+                            (id, sender, receiver, ciphertext, timestamp, is_dm, message_type)
+                            VALUES (?, ?, ?, ?, ?, 1, 'file')
+                        """, (msg_id, user_id, receiver["id"], stored_ref, timestamp))
+                        conn.commit()
+                    conn.close()
+                    payload = {"type": "file_message", "id": msg_id, "sender": username, "to": to_user, "file_id": file_id, "filename": filename, "mimetype": mimetype, "timestamp": timestamp}
+                    if receiver:
+                        await manager.send_to(receiver["id"], payload)
+                    await manager.send_to(user_id, payload)
+                else:
+                    conn = get_db()
+                    conn.execute("""
+                        INSERT INTO messages
+                        (id, sender, room, ciphertext, timestamp, is_dm, message_type)
+                        VALUES (?, ?, 'general', ?, ?, 0, 'file')
+                    """, (msg_id, user_id, stored_ref, timestamp))
+                    conn.commit()
+                    conn.close()
+                    await manager.broadcast({
+                        "type": "file_message", "id": msg_id, "sender": username,
+                        "file_id": file_id, "filename": filename, "mimetype": mimetype, "timestamp": timestamp
+                    })
 
             # ── PING (keep alive) ─────────────────────
             elif msg_type == "ping":

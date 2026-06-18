@@ -31,12 +31,13 @@ export function useWebSocket(user, fetchPublicKey) {
   const ws             = useRef(null)
   const pingInterval   = useRef(null)
 
-  const [connected,       setConnected]       = useState(false)
-  const [onlineUsers,     setOnlineUsers]     = useState([])
-  const [groupMessages,   setGroupMessages]   = useState([])
-  const [privateMessages, setPrivateMessages] = useState({})
-  const [typingUsers,     setTypingUsers]     = useState({})
-  const [unreadCounts,    setUnreadCounts]    = useState({})
+  const [connected,            setConnected]            = useState(false)
+  const [onlineUsers,          setOnlineUsers]          = useState([])
+  const [groupMessages,        setGroupMessages]        = useState([])
+  const [privateMessages,      setPrivateMessages]      = useState({})
+  const [typingUsers,          setTypingUsers]          = useState({})
+  const [unreadCounts,         setUnreadCounts]         = useState({})
+  const [pendingFriendRequests, setPendingFriendRequests] = useState([])
   const typingTimers = useRef({})
 
   useEffect(() => {
@@ -80,11 +81,13 @@ export function useWebSocket(user, fetchPublicKey) {
         break
 
       case 'history':
-        const history = data.messages.map(msg => ({
-          ...msg,
-          text: simpleDecrypt(msg.ciphertext, GROUP_KEY),
-          from: msg.sender_name,
-        }))
+        const history = data.messages.map(msg => {
+          if (msg.message_type === 'file') {
+            const parts = msg.ciphertext.replace('__FILE__', '').split('__')
+            return { ...msg, isFile: true, file_id: parts[0], filename: parts[1], mimetype: parts[2] || '', text: `📎 ${parts[1]}`, from: msg.sender_name }
+          }
+          return { ...msg, text: simpleDecrypt(msg.ciphertext, GROUP_KEY), from: msg.sender_name }
+        })
         setGroupMessages(history)
         break
 
@@ -114,14 +117,13 @@ export function useWebSocket(user, fetchPublicKey) {
         break
 
       case 'private_history':
-        const dmHistory = data.messages.map(msg => ({
-          ...msg,
-          text: simpleDecrypt(
-            msg.ciphertext,
-            `${msg.sender_name}-${data.with}-dm`
-          ),
-          from: msg.sender_name,
-        }))
+        const dmHistory = data.messages.map(msg => {
+          if (msg.message_type === 'file') {
+            const parts = msg.ciphertext.replace('__FILE__', '').split('__')
+            return { ...msg, isFile: true, file_id: parts[0], filename: parts[1], mimetype: parts[2] || '', text: `📎 ${parts[1]}`, from: msg.sender_name }
+          }
+          return { ...msg, text: simpleDecrypt(msg.ciphertext, `${msg.sender_name}-${data.with}-dm`), from: msg.sender_name }
+        })
         setPrivateMessages(prev => ({ ...prev, [data.with]: dmHistory }))
         break
 
@@ -137,6 +139,29 @@ export function useWebSocket(user, fetchPublicKey) {
       case 'stop_typing':
         const stopRoom = data.room === 'general' ? 'general' : data.from
         setTypingUsers(prev => { const u = { ...prev }; delete u[stopRoom]; return u })
+        break
+
+      case 'file_message': {
+        const isGroup = !data.to
+        const partner = isGroup ? null : (data.sender === user.username ? data.to : data.sender)
+        const fileMsg = { ...data, from: data.sender, isFile: true }
+        if (isGroup) {
+          setGroupMessages(prev => [...prev, fileMsg])
+        } else {
+          setPrivateMessages(prev => ({ ...prev, [partner]: [...(prev[partner] || []), fileMsg] }))
+          if (data.sender !== user.username) {
+            setUnreadCounts(prev => ({ ...prev, [data.sender]: (prev[data.sender] || 0) + 1 }))
+          }
+        }
+        break
+      }
+
+      case 'pending_friend_requests':
+        setPendingFriendRequests(data.requests || [])
+        break
+
+      case 'friend_request':
+        setPendingFriendRequests(prev => [...prev, { id: data.request_id, from_username: data.from_username }])
         break
 
       case 'pong':
@@ -188,11 +213,24 @@ export function useWebSocket(user, fetchPublicKey) {
     setUnreadCounts(prev => ({ ...prev, [username]: 0 }))
   }, [])
 
+  const sendFileMessage = useCallback((fileId, filename, mimetype, toUsername = null) => {
+    if (!ws.current) return
+    ws.current.send(JSON.stringify({
+      type: 'file_message',
+      file_id: fileId,
+      filename,
+      mimetype,
+      to: toUsername || undefined,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }))
+  }, [])
+
   return {
     connected, onlineUsers, groupMessages,
     privateMessages, typingUsers, unreadCounts,
     sendGroupMessage, sendPrivateMessage,
     sendTyping, sendStopTyping,
     fetchPrivateHistory, clearUnread,
+    sendFileMessage, pendingFriendRequests,
   }
 }

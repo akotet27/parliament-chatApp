@@ -208,6 +208,7 @@ function App() {
           fetchPublicKey={auth.fetchPublicKey}
           darkMode={darkMode}
           onToggleDark={toggleDark}
+          authApi={auth.api}
         />
       )}
     </div>
