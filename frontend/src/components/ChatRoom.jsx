@@ -410,7 +410,7 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: 'system-ui, sans-serif', background: bg, transition: 'background 0.3s' }}>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: "'Montserrat', system-ui, sans-serif", background: bg, transition: 'background 0.3s' }}>
 
       <style>{`
         @keyframes slideIn { from{transform:translateX(-100%);opacity:0} to{transform:translateX(0);opacity:1} }

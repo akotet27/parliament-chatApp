@@ -53,7 +53,7 @@ function LoginScreen({ onLogin, onGoToRegister, loading, error, darkMode, onTogg
   }
 
   return (
-    <div style={{ background: bg, minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif', transition: 'background 0.4s', position: 'relative', overflowX: 'hidden' }}>
+    <div style={{ background: bg, minHeight: '100vh', fontFamily: "'Montserrat', system-ui, -apple-system, sans-serif", transition: 'background 0.4s', position: 'relative', overflowX: 'hidden' }}>
 
       <style>{`
         * { box-sizing: border-box; }
@@ -66,6 +66,7 @@ function LoginScreen({ onLogin, onGoToRegister, loading, error, darkMode, onTogg
         @keyframes glow      { 0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)} 50%{opacity:0.65;transform:translate(-50%,-50%) scale(1.08)} }
         @keyframes logoBg    { 0%,100%{opacity:0.25;transform:scale(1)} 50%{opacity:0.42;transform:scale(1.05)} }
         @keyframes ringPulse { 0%{transform:translate(-50%,-50%) scale(0.92);opacity:0.12} 100%{transform:translate(-50%,-50%) scale(1.08);opacity:0.03} }
+        @keyframes logoWatermark { 0%,100%{opacity:0.07;transform:translate(-50%,-50%) scale(1)} 50%{opacity:0.12;transform:translate(-50%,-50%) scale(1.04)} }
 
         /* ── Component styles ── */
         .feature-card {
@@ -187,8 +188,8 @@ function LoginScreen({ onLogin, onGoToRegister, loading, error, darkMode, onTogg
       {/* ══ HERO ══ */}
       <section style={{
         background: d
-          ? 'linear-gradient(175deg, #060c1a 0%, #0d1a35 60%, #1a2d55 100%)'
-          : 'linear-gradient(175deg, #0f2444 0%, #1a3d72 55%, #1d4ed8 100%)',
+          ? 'linear-gradient(175deg, #04091a 0%, #0d1d38 55%, #1a4d8c 100%)'
+          : 'linear-gradient(175deg, #0c1f3a 0%, #1a4d8c 55%, #2060aa 100%)',
         padding: 'clamp(64px,9vw,108px) 24px clamp(90px,13vw,130px)',
         textAlign: 'center',
         position: 'relative', zIndex: 1,
@@ -260,7 +261,7 @@ function LoginScreen({ onLogin, onGoToRegister, loading, error, darkMode, onTogg
         <div style={{ position: 'relative', zIndex: 2, animation: 'fadeUp 0.7s 0.1s ease both' }}>
           <h1 style={{ fontSize: 'clamp(30px,6vw,58px)', fontWeight: 900, margin: '0 0 12px', color: '#fff', letterSpacing: '-1.5px', lineHeight: 1.08 }}>
             Secure. Private.{' '}
-            <span style={{ background: 'linear-gradient(130deg, #60a5fa 0%, #a78bfa 55%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            <span style={{ background: 'linear-gradient(130deg, #93c5fd 0%, #5b99e3 50%, #1a4d8c 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
               Classified.
             </span>
           </h1>
@@ -302,6 +303,23 @@ function LoginScreen({ onLogin, onGoToRegister, loading, error, darkMode, onTogg
       {/* ══ LOGIN FORM ══ */}
       <section style={{ maxWidth: '420px', margin: '44px auto', padding: '0 20px', position: 'relative', zIndex: 5, animation: 'fadeUp 0.75s 0.2s ease both' }}>
 
+        {/* Logo watermark — centered behind the card */}
+        <img
+          src="/parliament-logo.png" alt=""
+          style={{
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'min(500px, 110vw)', height: 'min(500px, 110vw)',
+            objectFit: 'contain', pointerEvents: 'none', zIndex: 0,
+            opacity: d ? 0.08 : 0.07,
+            filter: d
+              ? 'brightness(5) saturate(0.2)'
+              : 'saturate(0.5) brightness(0.85)',
+            animation: 'logoWatermark 10s ease-in-out infinite',
+          }}
+        />
+
+        <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{
           background: cardBg,
           backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
@@ -318,7 +336,7 @@ function LoginScreen({ onLogin, onGoToRegister, loading, error, darkMode, onTogg
 
             {/* Card header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(29,78,216,0.35)', flexShrink: 0 }}>
+              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #1a4d8c, #3578c8)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(26,77,140,0.38)', flexShrink: 0 }}>
                 <KeyRound size={19} color="#fff"/>
               </div>
               <div>
@@ -396,7 +414,7 @@ function LoginScreen({ onLogin, onGoToRegister, loading, error, darkMode, onTogg
 
               {/* Submit */}
               <button type="submit" disabled={loading || isSubmitting} className="submit-btn"
-                style={{ width: '100%', padding: '14px', background: loading || isSubmitting ? (d ? '#1e3564' : '#93c5fd') : 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%)', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: loading || isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: loading || isSubmitting ? 'none' : '0 4px 22px rgba(29,78,216,0.38)', letterSpacing: '0.02em' }}>
+                style={{ width: '100%', padding: '14px', background: loading || isSubmitting ? (d ? '#1a3560' : '#93c5fd') : 'linear-gradient(135deg, #1a4d8c 0%, #2060aa 50%, #3578c8 100%)', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: loading || isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: loading || isSubmitting ? 'none' : '0 4px 22px rgba(26,77,140,0.42)', letterSpacing: '0.02em' }}>
                 {loading || isSubmitting ? (
                   <>
                     <div style={{ width: '16px', height: '16px', border: '2.5px solid rgba(255,255,255,0.25)', borderTop: '2.5px solid #fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }}/>
@@ -426,6 +444,7 @@ function LoginScreen({ onLogin, onGoToRegister, loading, error, darkMode, onTogg
             Unauthorized access is a criminal offense under Ethiopian law. All sessions are monitored and logged.
           </p>
         </div>
+        </div>{/* end zIndex wrapper */}
       </section>
 
       {/* ══ HOW IT WORKS ══ */}
