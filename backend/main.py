@@ -523,6 +523,19 @@ def get_friend_requests(user=Depends(get_current_user)):
     conn.close()
     return [dict(r) for r in rows]
 
+@app.get("/api/friends/sent")
+def get_sent_friend_requests(user=Depends(get_current_user)):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT fr.id, u.username as to_username, fr.status, fr.created_at
+        FROM friend_requests fr
+        JOIN users u ON fr.to_user_id = u.id
+        WHERE fr.from_user_id=? AND fr.status='pending'
+        ORDER BY fr.created_at DESC
+    """, (user["id"],)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
 @app.put("/api/friends/requests/{request_id}/accept")
 async def accept_friend_request(request_id: str, user=Depends(get_current_user)):
     conn = get_db()
@@ -827,6 +840,51 @@ async def websocket_endpoint(ws: WebSocket, token: str):
                         "type": "file_message", "id": msg_id, "sender": username,
                         "file_id": file_id, "filename": filename, "mimetype": mimetype, "timestamp": timestamp
                     })
+
+            # ── DELETE MESSAGE ────────────────────────
+            elif msg_type == "delete_message":
+                msg_id = data.get("msg_id", "")
+                conn = get_db()
+                msg = conn.execute("SELECT * FROM messages WHERE id=?", (msg_id,)).fetchone()
+                if msg and msg["sender"] == user_id:
+                    conn.execute("DELETE FROM messages WHERE id=?", (msg_id,))
+                    conn.commit()
+                    payload = {"type": "message_deleted", "id": msg_id}
+                    if msg["is_dm"]:
+                        await manager.send_to(user_id, payload)
+                        if msg["receiver"]:
+                            await manager.send_to(msg["receiver"], payload)
+                    else:
+                        await manager.broadcast(payload)
+                conn.close()
+
+            # ── EDIT MESSAGE ──────────────────────────
+            elif msg_type == "edit_message":
+                msg_id    = data.get("msg_id", "")
+                new_cipher = data.get("ciphertext", "")
+                conn = get_db()
+                msg = conn.execute("SELECT * FROM messages WHERE id=?", (msg_id,)).fetchone()
+                if msg and msg["sender"] == user_id and new_cipher:
+                    conn.execute("UPDATE messages SET ciphertext=? WHERE id=?", (new_cipher, msg_id))
+                    conn.commit()
+                    broadcast_data = {
+                        "type":       "message_edited",
+                        "id":         msg_id,
+                        "ciphertext": new_cipher,
+                        "is_dm":      bool(msg["is_dm"]),
+                        "from":       username,
+                    }
+                    if msg["is_dm"] and msg["receiver"]:
+                        rec_row = conn.execute(
+                            "SELECT username FROM users WHERE id=?", (msg["receiver"],)
+                        ).fetchone()
+                        if rec_row:
+                            broadcast_data["to"] = rec_row["username"]
+                        await manager.send_to(user_id, broadcast_data)
+                        await manager.send_to(msg["receiver"], broadcast_data)
+                    else:
+                        await manager.broadcast(broadcast_data)
+                conn.close()
 
             # ── PING (keep alive) ─────────────────────
             elif msg_type == "ping":

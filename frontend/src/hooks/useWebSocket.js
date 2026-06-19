@@ -31,13 +31,14 @@ export function useWebSocket(user, fetchPublicKey) {
   const ws             = useRef(null)
   const pingInterval   = useRef(null)
 
-  const [connected,            setConnected]            = useState(false)
-  const [onlineUsers,          setOnlineUsers]          = useState([])
-  const [groupMessages,        setGroupMessages]        = useState([])
-  const [privateMessages,      setPrivateMessages]      = useState({})
-  const [typingUsers,          setTypingUsers]          = useState({})
-  const [unreadCounts,         setUnreadCounts]         = useState({})
-  const [pendingFriendRequests, setPendingFriendRequests] = useState([])
+  const [connected,              setConnected]              = useState(false)
+  const [onlineUsers,            setOnlineUsers]            = useState([])
+  const [groupMessages,          setGroupMessages]          = useState([])
+  const [privateMessages,        setPrivateMessages]        = useState({})
+  const [typingUsers,            setTypingUsers]            = useState({})
+  const [unreadCounts,           setUnreadCounts]           = useState({})
+  const [pendingFriendRequests,  setPendingFriendRequests]  = useState([])
+  const [friendRequestAccepted,  setFriendRequestAccepted]  = useState(null)
   const typingTimers = useRef({})
 
   useEffect(() => {
@@ -164,6 +165,41 @@ export function useWebSocket(user, fetchPublicKey) {
         setPendingFriendRequests(prev => [...prev, { id: data.request_id, from_username: data.from_username }])
         break
 
+      case 'friend_request_accepted':
+        setFriendRequestAccepted(data.by_username)
+        break
+
+      case 'message_deleted':
+        setGroupMessages(prev => prev.filter(m => m.id !== data.id))
+        setPrivateMessages(prev => {
+          const updated = {}
+          for (const [key, msgs] of Object.entries(prev)) {
+            updated[key] = msgs.filter(m => m.id !== data.id)
+          }
+          return updated
+        })
+        break
+
+      case 'message_edited': {
+        if (!data.is_dm) {
+          const editedText = simpleDecrypt(data.ciphertext, GROUP_KEY)
+          setGroupMessages(prev => prev.map(m =>
+            m.id === data.id ? { ...m, text: editedText, edited: true } : m
+          ))
+        } else {
+          const dmKey = `${data.from}-${data.to || data.from}-dm`
+          const editedText = simpleDecrypt(data.ciphertext, dmKey)
+          const partner = data.from === user.username ? (data.to || data.from) : data.from
+          setPrivateMessages(prev => ({
+            ...prev,
+            [partner]: (prev[partner] || []).map(m =>
+              m.id === data.id ? { ...m, text: editedText, edited: true } : m
+            )
+          }))
+        }
+        break
+      }
+
       case 'pong':
         break
 
@@ -225,6 +261,18 @@ export function useWebSocket(user, fetchPublicKey) {
     }))
   }, [])
 
+  const sendDeleteMessage = useCallback((msgId) => {
+    if (!ws.current) return
+    ws.current.send(JSON.stringify({ type: 'delete_message', msg_id: msgId }))
+  }, [])
+
+  const sendEditMessage = useCallback((msgId, newText, isDM, toUsername) => {
+    if (!ws.current) return
+    const key = isDM ? `${user.username}-${toUsername || user.username}-dm` : GROUP_KEY
+    const ciphertext = simpleEncrypt(newText, key)
+    ws.current.send(JSON.stringify({ type: 'edit_message', msg_id: msgId, ciphertext }))
+  }, [user?.username])
+
   return {
     connected, onlineUsers, groupMessages,
     privateMessages, typingUsers, unreadCounts,
@@ -232,5 +280,6 @@ export function useWebSocket(user, fetchPublicKey) {
     sendTyping, sendStopTyping,
     fetchPrivateHistory, clearUnread,
     sendFileMessage, pendingFriendRequests,
+    sendDeleteMessage, sendEditMessage, friendRequestAccepted,
   }
 }

@@ -234,11 +234,20 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
     sendTyping, sendStopTyping,
     fetchPrivateHistory, clearUnread,
     pendingFriendRequests, sendFileMessage,
+    sendDeleteMessage, sendEditMessage, friendRequestAccepted,
   } = useWebSocket(user, fetchPublicKey)
 
   const { timeLeft, showWarning, resetTimer } = useInactivity(
     () => onLogout('inactivity'), true
   )
+
+  // Notify when a sent request is accepted
+  useEffect(() => {
+    if (friendRequestAccepted) {
+      showNotif(`${friendRequestAccepted} accepted your connection request!`, 'success')
+      setSentRequests(prev => { const s = new Set(prev); s.delete(friendRequestAccepted); return s })
+    }
+  }, [friendRequestAccepted])
 
   // Sync WebSocket-delivered friend requests
   useEffect(() => {
@@ -256,12 +265,19 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
     const load = async () => {
       if (!authApi) return
       try {
-        const [membersRes, reqRes] = await Promise.all([
+        const [membersRes, reqRes, sentRes] = await Promise.all([
           authApi.get('/users'),
           authApi.get('/friends/requests'),
+          authApi.get('/friends/sent'),
         ])
         setAllMembers(membersRes.data)
-        setFriendRequests(reqRes.data)
+        // Merge so real-time WebSocket requests aren't overwritten
+        setFriendRequests(prev => {
+          const existingIds = new Set(prev.map(r => r.id))
+          const newOnes = reqRes.data.filter(r => !existingIds.has(r.id))
+          return [...prev, ...newOnes]
+        })
+        setSentRequests(new Set(sentRes.data.map(r => r.to_username)))
       } catch {}
     }
     load()
@@ -337,10 +353,13 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
 
   const handleEdit = (msgId, newText) => {
     setLocalMessages(prev => ({ ...prev, [msgId]: { text: newText } }))
+    const toUser = isDM ? activeRoom : null
+    sendEditMessage(msgId, newText, isDM, toUser)
   }
 
   const handleDelete = (msgId) => {
     setLocalMessages(prev => ({ ...prev, [msgId]: { deleted: true } }))
+    sendDeleteMessage(msgId)
   }
 
   const handleSelfChat = () => setActiveRoom(user.username)
@@ -639,7 +658,6 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: connected ? (d ? '#052e16' : '#f0fdf4') : (d ? '#450a0a' : '#fef2f2'), border: `1px solid ${connected ? '#bbf7d0' : '#fecaca'}`, borderRadius: '99px', padding: '6px 14px' }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: connected ? '#16a34a' : '#dc2626' }}/>
-              <Shield size={14} color={connected ? '#16a34a' : '#dc2626'}/>
               <span style={{ fontSize: '12px', fontWeight: 600, color: connected ? '#16a34a' : '#dc2626' }}>
                 {connected ? 'Secure' : 'Connecting...'}
               </span>
