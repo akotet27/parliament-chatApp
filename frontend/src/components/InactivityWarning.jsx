@@ -1,82 +1,149 @@
-// ═══════════════════════════════════════════════════════
-// Inactivity Warning Popup
-// Shows 30 seconds before auto logout
-// ═══════════════════════════════════════════════════════
-
 import { AlertTriangle, LogOut, Activity } from 'lucide-react'
 
-function InactivityWarning({ timeLeft, onStayLoggedIn, onLogoutNow }) {
+function InactivityWarning({ timeLeft, onStayLoggedIn, onLogoutNow, darkMode }) {
+  const d = darkMode
+
+  const cardBg    = d ? 'rgba(14,22,40,0.97)' : 'rgba(255,255,255,0.98)'
+  const textPrimary = d ? '#f1f5f9' : '#0f2444'
+  const textMuted   = d ? '#8496b0' : '#64748b'
+  const border      = d ? 'rgba(239,68,68,0.35)' : 'rgba(239,68,68,0.3)'
+
+  const urgent = timeLeft <= 10
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 200,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '16px',
+    }}>
 
-      {/* Dark backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"/>
+      {/* Backdrop */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'rgba(0,0,0,0.75)',
+        backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+      }}/>
 
-      {/* Warning card */}
-      <div className="relative w-full max-w-sm bg-gray-900 rounded-2xl border border-red-500/50 shadow-2xl overflow-hidden">
+      <style>{`
+        @keyframes pulse-bar { 0%,100%{opacity:1} 50%{opacity:0.45} }
+        @keyframes countdown-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
 
-        {/* Red top bar */}
-        <div className="h-1.5 bg-red-500 animate-pulse"/>
+      {/* Card */}
+      <div style={{
+        position: 'relative',
+        width: '100%', maxWidth: '380px',
+        background: cardBg,
+        backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
+        borderRadius: '24px',
+        border: `1px solid ${border}`,
+        boxShadow: d
+          ? '0 0 0 1px rgba(239,68,68,0.12), 0 32px 80px rgba(0,0,0,0.7)'
+          : '0 0 0 1px rgba(239,68,68,0.1), 0 24px 64px rgba(239,68,68,0.15)',
+        overflow: 'hidden',
+        animation: 'fadeIn 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+      }}>
 
-        <div className="p-6">
+        {/* Animated red top bar */}
+        <div style={{
+          height: '4px',
+          background: urgent
+            ? 'linear-gradient(90deg, #dc2626, #ef4444, #dc2626)'
+            : 'linear-gradient(90deg, #991b1b, #dc2626, #991b1b)',
+          backgroundSize: '200% 100%',
+          animation: 'pulse-bar 1s ease-in-out infinite',
+        }}/>
+
+        <div style={{ padding: '28px' }}>
 
           {/* Icon + title */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center flex-shrink-0">
-              <AlertTriangle className="w-6 h-6 text-red-400"/>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '14px', flexShrink: 0,
+              background: d ? 'rgba(239,68,68,0.12)' : '#fef2f2',
+              border: '1px solid rgba(239,68,68,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <AlertTriangle size={22} color="#ef4444"/>
             </div>
             <div>
-              <h2 className="text-white font-bold text-lg">
+              <p style={{ fontSize: '17px', fontWeight: 800, color: textPrimary, margin: 0, lineHeight: 1.2 }}>
                 Session Expiring
-              </h2>
-              <p className="text-gray-400 text-sm">
+              </p>
+              <p style={{ fontSize: '12px', color: textMuted, margin: 0, marginTop: '2px' }}>
                 Parliamentary session security
               </p>
             </div>
           </div>
 
           {/* Message */}
-          <p className="text-gray-300 text-sm mb-4 leading-relaxed">
-            You have been inactive. For security, your session will
-            automatically terminate in:
+          <p style={{ fontSize: '13px', color: textMuted, marginBottom: '18px', lineHeight: 1.7 }}>
+            You have been inactive. For security, your session will automatically terminate in:
           </p>
 
           {/* Countdown */}
-          <div className="flex items-center justify-center mb-6">
-            <div className="bg-red-500/10 border border-red-500/30 rounded-2xl px-8 py-4 text-center">
-              <span className="text-5xl font-black text-red-400 font-mono">
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
+            <div style={{
+              background: d ? 'rgba(239,68,68,0.08)' : '#fef2f2',
+              border: `1.5px solid rgba(239,68,68,${urgent ? '0.6' : '0.25'})`,
+              borderRadius: '18px', padding: '16px 40px', textAlign: 'center',
+              animation: urgent ? 'countdown-shake 0.4s ease-in-out infinite' : 'none',
+            }}>
+              <span style={{
+                fontSize: '54px', fontWeight: 900, color: '#ef4444',
+                fontFamily: 'monospace', lineHeight: 1, display: 'block',
+              }}>
                 {timeLeft}
               </span>
-              <p className="text-red-400/70 text-xs mt-1 uppercase tracking-wider">
+              <span style={{ fontSize: '11px', color: '#ef4444', opacity: 0.7, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 seconds remaining
-              </p>
+              </span>
             </div>
           </div>
 
           {/* Warning note */}
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-5">
-            <p className="text-yellow-400/80 text-xs leading-relaxed">
-              ⚠️ All encryption keys will be cleared from memory on logout.
-              You will need to enter your password again to re-establish
-              secure communications.
+          <div style={{
+            background: d ? 'rgba(234,179,8,0.08)' : 'rgba(254,252,232,0.9)',
+            border: '1px solid rgba(234,179,8,0.25)',
+            borderRadius: '12px', padding: '12px 14px', marginBottom: '22px',
+          }}>
+            <p style={{ fontSize: '12px', color: d ? 'rgba(253,224,71,0.8)' : '#92400e', margin: 0, lineHeight: 1.65 }}>
+              ⚠️ All encryption keys will be cleared from memory on logout. You will need to enter your password again to re-establish secure communications.
             </p>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-3">
+          {/* Buttons */}
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button
               onClick={onStayLoggedIn}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all bg-green-600 hover:bg-green-500 text-white"
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                padding: '13px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #16a34a, #22c55e)',
+                color: '#fff', fontSize: '13px', fontWeight: 700,
+                boxShadow: '0 4px 14px rgba(22,163,74,0.35)',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
             >
-              <Activity className="w-4 h-4"/>
-              I'm still here
+              <Activity size={15}/> I'm still here
             </button>
             <button
               onClick={onLogoutNow}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all bg-gray-700 hover:bg-gray-600 text-gray-300"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                padding: '13px 18px', borderRadius: '12px', cursor: 'pointer',
+                background: d ? '#450a0a' : '#fef2f2',
+                border: '1px solid #fecaca', color: '#dc2626',
+                fontSize: '13px', fontWeight: 700,
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#fecaca' }}
+              onMouseLeave={e => { e.currentTarget.style.background = d ? '#450a0a' : '#fef2f2' }}
             >
-              <LogOut className="w-4 h-4"/>
-              Logout
+              <LogOut size={15}/> Logout
             </button>
           </div>
 

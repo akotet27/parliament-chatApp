@@ -426,6 +426,7 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
           timeLeft={timeLeft}
           onStayLoggedIn={resetTimer}
           onLogoutNow={() => onLogout('manual')}
+          darkMode={darkMode}
         />
       )}
 
