@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════
 // Validation Module — Parliament Chat
 // All form validation rules with detailed error messages
 // ═══════════════════════════════════════════════════════
@@ -133,7 +133,7 @@ export function validatePassword(password) {
 
   // Strength labels
   const strengthLabels = ['', 'Weak', 'Fair', 'Strong', 'Very Strong']
-  const strengthColors = ['', '#EF4444', '#F59E0B', '#3B82F6', '#10B981']
+  const strengthColors = ['', '#EF4444', '#F59E0B', '#33a0d4', '#10B981']
   const strengthLabel = strengthLabels[Math.min(strength, 4)] || ''
   const strengthColor = strengthColors[Math.min(strength, 4)] || ''
 

@@ -79,6 +79,16 @@ def init_db():
         )
     """)
 
+    # Password reset tokens
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS reset_tokens (
+            token      TEXT PRIMARY KEY,
+            user_id    TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     # Files table
     c.execute("""
         CREATE TABLE IF NOT EXISTS files (
@@ -101,6 +111,23 @@ def init_db():
             status       TEXT DEFAULT 'pending',
             created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(from_user_id, to_user_id)
+        )
+    """)
+
+    # Custom groups
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS groups (
+            id         TEXT PRIMARY KEY,
+            name       TEXT NOT NULL,
+            created_by TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS group_members (
+            group_id TEXT NOT NULL,
+            user_id  TEXT NOT NULL,
+            PRIMARY KEY (group_id, user_id)
         )
     """)
 
@@ -207,6 +234,10 @@ class MessageModel(BaseModel):
 
 class FriendRequestModel(BaseModel):
     to_username: str
+
+class CreateGroupModel(BaseModel):
+    name: str
+    members: List[str]
 
 # ── CONNECTION MANAGER ───────────────────────────────────
 class ConnectionManager:
@@ -451,8 +482,8 @@ def get_members(user=Depends(get_current_user)):
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...), user=Depends(get_current_user)):
     content = await file.read()
-    if len(content) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="File too large (max 5MB)")
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 50MB)")
     file_id = str(uuid.uuid4())
     data_b64 = base64.b64encode(content).decode()
     conn = get_db()
@@ -570,6 +601,111 @@ async def reject_friend_request(request_id: str, user=Depends(get_current_user))
     conn.close()
     return {"message": "Connection request rejected"}
 
+@app.get("/api/friends/connections")
+def get_connections(user=Depends(get_current_user)):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT CASE
+            WHEN fr.from_user_id = ? THEN u2.username
+            ELSE u1.username
+        END as username
+        FROM friend_requests fr
+        JOIN users u1 ON fr.from_user_id = u1.id
+        JOIN users u2 ON fr.to_user_id = u2.id
+        WHERE (fr.from_user_id = ? OR fr.to_user_id = ?)
+        AND fr.status = 'accepted'
+    """, (user["id"], user["id"], user["id"])).fetchall()
+    conn.close()
+    return [r["username"] for r in rows]
+
+@app.post("/api/admin/users/{user_id}/reset-token")
+def generate_reset_token(user_id: str, admin=Depends(require_admin)):
+    """Generate a one-time password reset token. The user uses the link to set their own password."""
+    conn = get_db()
+    user = conn.execute("SELECT id, email FROM users WHERE id=?", (user_id,)).fetchone()
+    if not user:
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+    token = str(uuid.uuid4())
+    expires = (datetime.utcnow() + timedelta(hours=24)).isoformat()
+    conn.execute(
+        "INSERT OR REPLACE INTO reset_tokens (token, user_id, expires_at) VALUES (?,?,?)",
+        (token, user_id, expires)
+    )
+    conn.commit()
+    conn.close()
+    log_activity(admin["id"], f"generated_reset_link:{user_id}")
+    return {"token": token}
+
+class SelfResetModel(BaseModel):
+    token: str
+    new_password: str
+
+@app.post("/api/auth/reset-password")
+def self_reset_password(data: SelfResetModel):
+    """Allow a user to reset their own password using a valid token."""
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    conn = get_db()
+    row = conn.execute(
+        "SELECT user_id, expires_at FROM reset_tokens WHERE token=?", (data.token,)
+    ).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Invalid or already-used reset link")
+    if datetime.utcnow().isoformat() > row["expires_at"]:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Reset link has expired")
+    hashed = bcrypt.hashpw(data.new_password.encode(), bcrypt.gensalt()).decode()
+    conn.execute("UPDATE users SET password=? WHERE id=?", (hashed, row["user_id"]))
+    conn.execute("DELETE FROM reset_tokens WHERE token=?", (data.token,))
+    conn.commit()
+    conn.close()
+    return {"message": "Password updated successfully"}
+
+# ── GROUP ENDPOINTS ──────────────────────────────────────
+
+@app.post("/api/groups")
+async def create_group(body: CreateGroupModel, user=Depends(get_current_user)):
+    if not body.name.strip():
+        raise HTTPException(status_code=400, detail="Group name required")
+    conn = get_db()
+    group_id = str(uuid.uuid4())
+    member_ids = [user["id"]]
+    for uname in body.members:
+        if uname == user["username"]:
+            continue
+        m = conn.execute("SELECT id FROM users WHERE username=?", (uname,)).fetchone()
+        if not m:
+            conn.close()
+            raise HTTPException(status_code=404, detail=f"User '{uname}' not found")
+        member_ids.append(m["id"])
+    conn.execute(
+        "INSERT INTO groups (id, name, created_by) VALUES (?, ?, ?)",
+        (group_id, body.name.strip(), user["id"])
+    )
+    for uid in member_ids:
+        conn.execute(
+            "INSERT INTO group_members (group_id, user_id) VALUES (?, ?)",
+            (group_id, uid)
+        )
+    conn.commit()
+    conn.close()
+    return {"id": group_id, "name": body.name.strip(), "members": body.members}
+
+@app.get("/api/groups")
+def get_groups(user=Depends(get_current_user)):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT g.id, g.name, g.created_by, g.created_at
+        FROM groups g
+        JOIN group_members gm ON g.id = gm.group_id
+        WHERE gm.user_id = ?
+        ORDER BY g.created_at DESC
+    """, (user["id"],)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
 # ── WEBSOCKET ────────────────────────────────────────────
 
 @app.websocket("/ws/{token}")
@@ -666,26 +802,48 @@ async def websocket_endpoint(ws: WebSocket, token: str):
             if msg_type == "group_message":
                 ciphertext = data.get("ciphertext", "")
                 timestamp  = data.get("timestamp", "")
+                room       = data.get("room", "general")
                 msg_id     = str(uuid.uuid4())
 
-                # Store encrypted — server cannot read
                 conn = get_db()
-                conn.execute("""
-                    INSERT INTO messages
-                    (id, sender, room, ciphertext, timestamp, is_dm)
-                    VALUES (?, ?, 'general', ?, ?, 0)
-                """, (msg_id, user_id, ciphertext, timestamp))
-                conn.commit()
-                conn.close()
-
-                await manager.broadcast({
-                    "type":       "group_message",
-                    "id":         msg_id,
-                    "sender":     username,
-                    "sender_id":  user_id,
-                    "ciphertext": ciphertext,
-                    "timestamp":  timestamp,
-                })
+                if room == "general":
+                    conn.execute("""
+                        INSERT INTO messages
+                        (id, sender, room, ciphertext, timestamp, is_dm)
+                        VALUES (?, ?, 'general', ?, ?, 0)
+                    """, (msg_id, user_id, ciphertext, timestamp))
+                    conn.commit()
+                    conn.close()
+                    await manager.broadcast({
+                        "type": "group_message", "id": msg_id, "room": "general",
+                        "sender": username, "sender_id": user_id,
+                        "ciphertext": ciphertext, "timestamp": timestamp,
+                    })
+                else:
+                    is_member = conn.execute(
+                        "SELECT 1 FROM group_members WHERE group_id=? AND user_id=?",
+                        (room, user_id)
+                    ).fetchone()
+                    if is_member:
+                        conn.execute("""
+                            INSERT INTO messages
+                            (id, sender, room, ciphertext, timestamp, is_dm)
+                            VALUES (?, ?, ?, ?, ?, 0)
+                        """, (msg_id, user_id, room, ciphertext, timestamp))
+                        conn.commit()
+                        members = conn.execute(
+                            "SELECT user_id FROM group_members WHERE group_id=?", (room,)
+                        ).fetchall()
+                        conn.close()
+                        payload = {
+                            "type": "group_message", "id": msg_id, "room": room,
+                            "sender": username, "sender_id": user_id,
+                            "ciphertext": ciphertext, "timestamp": timestamp,
+                        }
+                        for m in members:
+                            await manager.send_to(m["user_id"], payload)
+                    else:
+                        conn.close()
 
             # ── PRIVATE MESSAGE ───────────────────────
             elif msg_type == "private_message":
@@ -768,6 +926,31 @@ async def websocket_endpoint(ws: WebSocket, token: str):
                             "from": username,
                             "room": to
                         })
+
+            # ── FETCH GROUP HISTORY ───────────────────
+            elif msg_type == "fetch_group_history":
+                room = data.get("room")
+                if room:
+                    conn = get_db()
+                    is_member = conn.execute(
+                        "SELECT 1 FROM group_members WHERE group_id=? AND user_id=?",
+                        (room, user_id)
+                    ).fetchone()
+                    if is_member:
+                        history = conn.execute("""
+                            SELECT m.*, u.username as sender_name
+                            FROM messages m
+                            JOIN users u ON m.sender = u.id
+                            WHERE m.is_dm = 0 AND m.room = ?
+                            ORDER BY m.created_at ASC
+                            LIMIT 100
+                        """, (room,)).fetchall()
+                        await manager.send_to(user_id, {
+                            "type": "group_history",
+                            "room": room,
+                            "messages": [dict(h) for h in history]
+                        })
+                    conn.close()
 
             # ── FETCH PRIVATE HISTORY ─────────────────
             elif msg_type == "fetch_private":

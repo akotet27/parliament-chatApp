@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Send, Shield, LogOut, Lock, Hash,
   ArrowLeft, Moon, Sun,
   Edit2, Trash2, Check, X, ChevronLeft, ChevronRight,
   MessageSquare, Menu, Paperclip, UserPlus, Bell, Download,
-  Image, FileText, CheckCircle, XCircle, Users
+  Image, FileText, CheckCircle, XCircle, Users, Plus
 } from 'lucide-react'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { useInactivity } from '../hooks/useInactivity'
 import InactivityWarning from './InactivityWarning'
+import CreateGroupModal from './CreateGroupModal'
 
 const API = 'https://parliament-chatapp-1.onrender.com/api'
 
@@ -54,11 +55,11 @@ function FileAttachment({ fileId, filename, mimetype, isOwn, darkMode }) {
           onClick={handleDownload}
         />
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: isOwn ? 'rgba(255,255,255,0.15)' : (d ? '#1e293b' : '#e2e8f0'), borderRadius: '8px', marginTop: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: isOwn ? 'rgba(255,255,255,0.15)' : (d ? '#002a50' : '#e2e8f0'), borderRadius: '8px', marginTop: '4px' }}>
           {isImage ? <Image size={16} style={{ flexShrink: 0 }}/> : <FileText size={16} style={{ flexShrink: 0 }}/>}
           <span style={{ fontSize: '13px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{filename}</span>
           <button onClick={handleDownload} disabled={loading}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: isOwn ? '#fff' : '#1d4ed8', opacity: loading ? 0.5 : 1, padding: '2px', display: 'flex' }}>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: isOwn ? '#fff' : '#0066b2', opacity: loading ? 0.5 : 1, padding: '2px', display: 'flex' }}>
             <Download size={14}/>
           </button>
         </div>
@@ -75,9 +76,9 @@ function MessageBubble({ msg, isOwn, darkMode, onDelete, onEdit }) {
   const [showDel,   setShowDel]   = useState(false)
 
   const d           = darkMode
-  const ownBg       = 'linear-gradient(135deg, #1d4ed8, #3b82f6)'
-  const otherBg     = d ? '#334155' : '#f1f5f9'
-  const otherColor  = d ? '#f1f5f9' : '#0f2444'
+  const ownBg       = 'linear-gradient(135deg, #0066b2, #1a80cc)'
+  const otherBg     = d ? '#0f2a48' : '#ffffff'
+  const otherColor  = d ? '#e6f4ff' : '#002244'
 
   const handleSaveEdit = () => {
     if (editText.trim() && editText !== msg.text) {
@@ -98,14 +99,14 @@ function MessageBubble({ msg, isOwn, darkMode, onDelete, onEdit }) {
       onMouseLeave={() => { setHovered(false); setShowDel(false) }}
     >
       {!isOwn && (
-        <span style={{ fontSize: '12px', fontWeight: 700, color: '#1d4ed8', marginBottom: '4px', marginLeft: '36px' }}>
+        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0066b2', marginBottom: '4px', marginLeft: '36px' }}>
           {msg.from}
         </span>
       )}
 
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', flexDirection: isOwn ? 'row-reverse' : 'row', maxWidth: '75%' }}>
         {/* Avatar */}
-        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isOwn ? '#1d4ed8' : (d ? '#475569' : '#e2e8f0'), color: isOwn ? '#fff' : (d ? '#f1f5f9' : '#0f2444'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px', flexShrink: 0 }}>
+        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isOwn ? '#0066b2' : (d ? '#475569' : '#e2e8f0'), color: isOwn ? '#fff' : (d ? '#f1f5f9' : '#0f2444'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px', flexShrink: 0 }}>
           {msg.from?.[0]?.toUpperCase()}
         </div>
 
@@ -116,18 +117,18 @@ function MessageBubble({ msg, isOwn, darkMode, onDelete, onEdit }) {
               <button
                 onClick={() => { setEditing(true); setEditText(msg.text) }}
                 title="Edit message"
-                style={{ width: '28px', height: '28px', borderRadius: '6px', border: `1px solid ${d ? '#475569' : '#e2e8f0'}`, background: d ? '#1e293b' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1d4ed8', transition: 'all 0.15s' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
-                onMouseLeave={e => e.currentTarget.style.background = d ? '#1e293b' : '#fff'}
+                style={{ width: '28px', height: '28px', borderRadius: '6px', border: `1px solid ${d ? '#475569' : '#e2e8f0'}`, background: d ? '#002a50' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0066b2', transition: 'all 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#dff0ff'}
+                onMouseLeave={e => e.currentTarget.style.background = d ? '#002a50' : '#fff'}
               >
                 <Edit2 size={13}/>
               </button>
               <button
                 onClick={() => setShowDel(true)}
                 title="Delete message"
-                style={{ width: '28px', height: '28px', borderRadius: '6px', border: `1px solid ${d ? '#475569' : '#e2e8f0'}`, background: d ? '#1e293b' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626', transition: 'all 0.15s' }}
+                style={{ width: '28px', height: '28px', borderRadius: '6px', border: `1px solid ${d ? '#475569' : '#e2e8f0'}`, background: d ? '#002a50' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626', transition: 'all 0.15s' }}
                 onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
-                onMouseLeave={e => e.currentTarget.style.background = d ? '#1e293b' : '#fff'}
+                onMouseLeave={e => e.currentTarget.style.background = d ? '#002a50' : '#fff'}
               >
                 <Trash2 size={13}/>
               </button>
@@ -136,14 +137,14 @@ function MessageBubble({ msg, isOwn, darkMode, onDelete, onEdit }) {
 
           {/* Delete confirmation */}
           {showDel && (
-            <div style={{ position: 'absolute', top: '-44px', right: 0, zIndex: 20, background: d ? '#1e293b' : '#fff', border: `1px solid ${d ? '#475569' : '#e2e8f0'}`, borderRadius: '10px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>
+            <div style={{ position: 'absolute', top: '-44px', right: 0, zIndex: 20, background: d ? '#002a50' : '#fff', border: `1px solid ${d ? '#475569' : '#e2e8f0'}`, borderRadius: '10px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>
               <span style={{ fontSize: '12px', color: d ? '#f1f5f9' : '#0f2444' }}>Delete?</span>
               <button onClick={() => { onDelete(msg.id); setShowDel(false) }}
                 style={{ padding: '3px 10px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                 Yes
               </button>
               <button onClick={() => setShowDel(false)}
-                style={{ padding: '3px 10px', background: d ? '#334155' : '#f1f5f9', color: d ? '#f1f5f9' : '#374151', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '3px 10px', background: d ? '#003070' : '#f1f5f9', color: d ? '#f1f5f9' : '#374151', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                 No
               </button>
             </div>
@@ -157,15 +158,15 @@ function MessageBubble({ msg, isOwn, darkMode, onDelete, onEdit }) {
                 value={editText}
                 onChange={e => setEditText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                style={{ width: '100%', padding: '10px 14px', fontSize: '14px', border: '2px solid #1d4ed8', borderRadius: '12px', outline: 'none', resize: 'none', background: d ? '#0f172a' : '#fff', color: d ? '#f1f5f9' : '#0f2444', fontFamily: 'inherit', boxSizing: 'border-box', minHeight: '60px' }}
+                style={{ width: '100%', padding: '10px 14px', fontSize: '14px', border: '2px solid #0066b2', borderRadius: '12px', outline: 'none', resize: 'none', background: d ? '#001020' : '#fff', color: d ? '#f1f5f9' : '#0f2444', fontFamily: 'inherit', boxSizing: 'border-box', minHeight: '60px' }}
               />
               <div style={{ display: 'flex', gap: '6px', marginTop: '4px', justifyContent: 'flex-end' }}>
                 <button onClick={handleSaveEdit}
-                  style={{ padding: '4px 12px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  style={{ padding: '4px 12px', background: '#0066b2', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Check size={12}/> Save
                 </button>
                 <button onClick={() => { setEditing(false); setEditText(msg.text) }}
-                  style={{ padding: '4px 12px', background: d ? '#334155' : '#f1f5f9', color: d ? '#f1f5f9' : '#374151', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  style={{ padding: '4px 12px', background: d ? '#003070' : '#f1f5f9', color: d ? '#f1f5f9' : '#374151', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <X size={12}/> Cancel
                 </button>
               </div>
@@ -198,9 +199,9 @@ function MessageBubble({ msg, isOwn, darkMode, onDelete, onEdit }) {
 function TypingIndicator({ name, darkMode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0 8px' }}>
-      <div style={{ background: darkMode ? '#334155' : '#f1f5f9', borderRadius: '12px', padding: '8px 12px', display: 'flex', gap: '4px', alignItems: 'center' }}>
+      <div style={{ background: darkMode ? '#003070' : '#f1f5f9', borderRadius: '12px', padding: '8px 12px', display: 'flex', gap: '4px', alignItems: 'center' }}>
         {[0, 150, 300].map(delay => (
-          <div key={delay} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#1d4ed8', animation: 'bounce 1s infinite', animationDelay: `${delay}ms` }}/>
+          <div key={delay} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0066b2', animation: 'bounce 1s infinite', animationDelay: `${delay}ms` }}/>
         ))}
       </div>
       <span style={{ fontSize: '12px', color: darkMode ? '#94a3b8' : '#64748b' }}>{name} is typing...</span>
@@ -220,6 +221,9 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
   const [sentRequests,    setSentRequests]    = useState(new Set())
   const [notification,    setNotification]    = useState(null)
   const [uploading,       setUploading]       = useState(false)
+  const [groups,          setGroups]          = useState([])
+  const [showCreateGroup, setShowCreateGroup] = useState(false)
+  const [connectedUsers,  setConnectedUsers]  = useState(new Set())
 
   const messagesEndRef = useRef(null)
   const typingTimeout  = useRef(null)
@@ -228,11 +232,11 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
   const fileInputRef   = useRef(null)
 
   const {
-    connected, onlineUsers, groupMessages,
+    connected, onlineUsers, groupMessages, groupRoomMessages,
     privateMessages, typingUsers, unreadCounts,
     sendGroupMessage, sendPrivateMessage,
     sendTyping, sendStopTyping,
-    fetchPrivateHistory, clearUnread,
+    fetchPrivateHistory, fetchGroupHistory, clearUnread,
     pendingFriendRequests, sendFileMessage,
     sendDeleteMessage, sendEditMessage, friendRequestAccepted,
   } = useWebSocket(user, fetchPublicKey)
@@ -265,10 +269,12 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
     const load = async () => {
       if (!authApi) return
       try {
-        const [membersRes, reqRes, sentRes] = await Promise.all([
+        const [membersRes, reqRes, sentRes, groupsRes, connectionsRes] = await Promise.all([
           authApi.get('/users'),
           authApi.get('/friends/requests'),
           authApi.get('/friends/sent'),
+          authApi.get('/groups'),
+          authApi.get('/friends/connections'),
         ])
         setAllMembers(membersRes.data)
         // Merge so real-time WebSocket requests aren't overwritten
@@ -278,39 +284,44 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
           return [...prev, ...newOnes]
         })
         setSentRequests(new Set(sentRes.data.map(r => r.to_username)))
+        setGroups(groupsRes.data || [])
+        setConnectedUsers(new Set(connectionsRes.data || []))
       } catch {}
     }
     load()
   }, [authApi])
 
-  // Colors
+  // Colors — 1Password-inspired light/dark system
   const d           = darkMode
-  const bg          = d ? '#0f172a' : '#f8fafc'
-  const sidebarBg   = d ? '#1e293b' : '#ffffff'
-  const headerBg    = d ? '#1e293b' : '#ffffff'
-  const msgAreaBg   = d ? '#0f172a' : '#f8fafc'
-  const inputAreaBg = d ? '#1e293b' : '#ffffff'
-  const border      = d ? '#334155' : '#e2e8f0'
-  const textPrimary = d ? '#f1f5f9' : '#0f2444'
-  const textMuted   = d ? '#94a3b8' : '#64748b'
-  const inputBg     = d ? '#0f172a' : '#f8fafc'
-  const inputColor  = d ? '#f1f5f9' : '#0f2444'
+  const bg          = d ? '#0d1e35' : '#dce9f7'
+  const sidebarBg   = d ? '#112038' : '#ffffff'
+  const headerBg    = d ? '#112038' : '#ffffff'
+  const msgAreaBg   = d ? '#091628' : '#e2eef9'
+  const inputAreaBg = d ? '#112038' : '#ffffff'
+  const border      = d ? 'rgba(0,102,178,0.2)' : 'rgba(0,102,178,0.15)'
+  const textPrimary = d ? '#e6f4ff' : '#001a3d'
+  const textMuted   = d ? '#5b8ab8' : '#4a6580'
+  const inputBg     = d ? '#000d1f' : '#f5faff'
+  const inputColor  = d ? '#e6f4ff' : '#001a3d'
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [groupMessages, privateMessages, localMessages, activeRoom])
 
-  useEffect(() => {
-    const isDM = activeRoom !== 'general'
-    if (isDM) { fetchPrivateHistory(activeRoom); clearUnread(activeRoom) }
-  }, [activeRoom])
+  const isCustomGroup = groups.some(g => g.id === activeRoom)
+  const isDM = activeRoom !== 'general' && !isCustomGroup
 
-  const isDM = activeRoom !== 'general'
+  useEffect(() => {
+    const isGroup = groups.some(g => g.id === activeRoom)
+    if (isDM) { fetchPrivateHistory(activeRoom); clearUnread(activeRoom) }
+    else if (isGroup) { fetchGroupHistory(activeRoom) }
+  }, [activeRoom])
 
   // Merge server messages with local edits/deletes
   const getRawMessages = () => {
-    if (isDM) return privateMessages[activeRoom] || []
-    return groupMessages
+    if (activeRoom === 'general') return groupMessages
+    if (isCustomGroup) return groupRoomMessages[activeRoom] || []
+    return privateMessages[activeRoom] || []
   }
 
   const currentMessages = getRawMessages().map(msg => {
@@ -332,7 +343,7 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
   const handleSend = async () => {
     if (!input.trim()) return
     if (isDM) await sendPrivateMessage(activeRoom, input)
-    else await sendGroupMessage(input)
+    else await sendGroupMessage(input, activeRoom)
     setInput('')
     sendStopTyping(activeRoom)
     isTypingRef.current = false
@@ -367,14 +378,14 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0]
     if (!file || !authApi) return
-    if (file.size > 5 * 1024 * 1024) { showNotif('File too large (max 5MB)', 'error'); return }
+    if (file.size > 50 * 1024 * 1024) { showNotif('File too large (max 50MB)', 'error'); return }
     setUploading(true)
     try {
       const formData = new FormData()
       formData.append('file', file)
       const res = await authApi.post('/upload', formData)
       const { file_id, filename, mimetype } = res.data
-      const to = isDM && activeRoom !== user.username ? activeRoom : null
+      const to = isDM ? activeRoom : null
       sendFileMessage(file_id, filename, mimetype, to)
       showNotif(`Sent: ${filename}`, 'success')
     } catch { showNotif('Upload failed', 'error') }
@@ -409,6 +420,12 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
     } catch {}
   }
 
+  const handleCreateGroup = async (name, members) => {
+    if (!authApi) throw new Error('Not authenticated')
+    const res = await authApi.post('/groups', { name, members })
+    setGroups(prev => [res.data, ...prev])
+  }
+
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: "'Montserrat', system-ui, sans-serif", background: bg, transition: 'background 0.3s' }}>
 
@@ -416,9 +433,36 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
         @keyframes slideIn { from{transform:translateX(-100%);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes fadeMsg { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes spin { to{transform:rotate(360deg)} }
-        .room-btn:hover { background: ${d ? '#334155' : '#f1f5f9'} !important; }
-        .send-btn:hover:not(:disabled) { opacity: 0.85; transform: scale(1.05); }
-        .sidebar-toggle:hover { background: ${d ? '#334155' : '#f1f5f9'} !important; }
+
+        .room-btn { transition: all 0.15s; }
+        .room-btn:hover { background: ${d ? '#003466' : '#cce4f8'} !important; color: #0066b2 !important; }
+        .send-btn { transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+        .send-btn:hover:not(:disabled) { transform: scale(1.1); box-shadow: 0 6px 20px rgba(0,102,178,0.5) !important; }
+        .sidebar-toggle:hover { background: ${d ? '#003466' : '#d0e8fa'} !important; color: #0066b2 !important; }
+        .attach-btn:hover:not(:disabled) { background: ${d ? '#003070' : '#d0e8fa'} !important; color: #0066b2 !important; }
+        .signout-btn:hover { background: ${d ? 'rgba(220,38,38,0.12)' : '#fef2f2'} !important; color: #dc2626 !important; border-color: #fecaca !important; }
+
+        /* ── Responsiveness ── */
+        @media (max-width: 768px) {
+          .chat-sidebar {
+            position: fixed !important; left: 0; top: 0; bottom: 0; height: 100vh !important;
+            z-index: 200; box-shadow: 6px 0 24px rgba(0,0,0,0.25) !important;
+          }
+          .mobile-backdrop { display: block !important; }
+          .chat-header-actions { gap: 6px !important; }
+        }
+        .mobile-backdrop { display: none; }
+
+        @media (max-width: 480px) {
+          .input-area { padding: 8px 10px !important; }
+          .input-btn { width: 40px !important; height: 40px !important; }
+          .chat-header-title { font-size: 12px !important; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: ${d ? 'rgba(0,102,178,0.3)' : 'rgba(0,102,178,0.2)'}; border-radius: 2px; }
       `}</style>
 
       {showWarning && (
@@ -430,8 +474,20 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
         />
       )}
 
+      {/* Mobile overlay — tap to close sidebar */}
+      <div className="mobile-backdrop" onClick={() => setSidebarOpen(false)} style={{
+        position: 'fixed', inset: 0, zIndex: 199,
+        background: 'rgba(0,10,30,0.5)',
+        backdropFilter: 'blur(2px)',
+        cursor: 'pointer',
+        display: 'none',  // CSS overrides to block on ≤768px only when sidebar open
+        opacity: sidebarOpen ? 1 : 0,
+        pointerEvents: sidebarOpen ? 'auto' : 'none',
+        transition: 'opacity 0.25s',
+      }}/>
+
       {/* ── SIDEBAR ── */}
-      <div style={{
+      <div className="chat-sidebar" style={{
         width: sidebarOpen ? '260px' : '0px',
         minWidth: sidebarOpen ? '260px' : '0px',
         overflow: 'hidden',
@@ -457,8 +513,8 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
           </div>
 
           {/* User card */}
-          <div style={{ background: d ? '#0f172a' : '#f8fafc', borderRadius: '10px', padding: '10px 12px', border: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#eff6ff', color: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', flexShrink: 0 }}>
+          <div style={{ background: d ? '#001020' : '#f8fafc', borderRadius: '10px', padding: '10px 12px', border: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#dff0ff', color: '#0066b2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', flexShrink: 0 }}>
               {user.username[0].toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -473,41 +529,54 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }}>
 
           {/* Channels */}
-          <p style={{ fontSize: '11px', fontWeight: 700, color: textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 6px 4px' }}>Channels</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '10px 4px 6px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Channels</p>
+            <button onClick={() => setShowCreateGroup(true)} title="New Group" style={{ width: '20px', height: '20px', borderRadius: '5px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textMuted, padding: 0 }}
+              onMouseEnter={e => e.currentTarget.style.color = '#0066b2'}
+              onMouseLeave={e => e.currentTarget.style.color = textMuted}>
+              <Plus size={14}/>
+            </button>
+          </div>
           <button
             className="room-btn"
             onClick={() => setActiveRoom('general')}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: activeRoom === 'general' ? (d ? '#1e3a5f' : '#eff6ff') : 'transparent', color: activeRoom === 'general' ? '#1d4ed8' : textMuted, fontSize: '13px', fontWeight: 600, textAlign: 'left', borderLeft: activeRoom === 'general' ? '3px solid #1d4ed8' : '3px solid transparent', transition: 'all 0.15s' }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: activeRoom === 'general' ? (d ? '#003466' : '#dff0ff') : 'transparent', color: activeRoom === 'general' ? '#0066b2' : textMuted, fontSize: '13px', fontWeight: 600, textAlign: 'left', borderLeft: activeRoom === 'general' ? '3px solid #0066b2' : '3px solid transparent', transition: 'all 0.15s' }}
           >
             <Hash size={15}/> general
           </button>
+          {groups.map(g => (
+            <button key={g.id} className="room-btn" onClick={() => setActiveRoom(g.id)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: activeRoom === g.id ? (d ? '#003466' : '#dff0ff') : 'transparent', color: activeRoom === g.id ? '#0066b2' : textMuted, fontSize: '13px', fontWeight: 600, textAlign: 'left', borderLeft: activeRoom === g.id ? '3px solid #0066b2' : '3px solid transparent', transition: 'all 0.15s' }}>
+              <Users size={15}/> {g.name}
+            </button>
+          ))}
 
           {/* Chat with yourself */}
           <p style={{ fontSize: '11px', fontWeight: 700, color: textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 6px 4px' }}>Notes to self</p>
           <button
             className="room-btn"
             onClick={handleSelfChat}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: activeRoom === user.username ? (d ? '#1e3a5f' : '#eff6ff') : 'transparent', color: activeRoom === user.username ? '#1d4ed8' : textMuted, fontSize: '13px', fontWeight: 600, textAlign: 'left', borderLeft: activeRoom === user.username ? '3px solid #1d4ed8' : '3px solid transparent', transition: 'all 0.15s' }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: activeRoom === user.username ? (d ? '#003466' : '#dff0ff') : 'transparent', color: activeRoom === user.username ? '#0066b2' : textMuted, fontSize: '13px', fontWeight: 600, textAlign: 'left', borderLeft: activeRoom === user.username ? '3px solid #0066b2' : '3px solid transparent', transition: 'all 0.15s' }}
           >
             <MessageSquare size={15}/> My Notes
-            <span style={{ marginLeft: 'auto', fontSize: '10px', background: d ? '#334155' : '#e2e8f0', padding: '2px 6px', borderRadius: '4px', color: textMuted }}>You</span>
+            <span style={{ marginLeft: 'auto', fontSize: '10px', background: d ? '#003070' : '#e2e8f0', padding: '2px 6px', borderRadius: '4px', color: textMuted }}>You</span>
           </button>
 
           {/* Connection Requests */}
           {friendRequests.length > 0 && (
             <>
-              <p style={{ fontSize: '11px', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 6px 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <p style={{ fontSize: '11px', fontWeight: 700, color: '#0066b2', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 6px 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Bell size={12}/> Requests
-                <span style={{ background: '#1d4ed8', color: '#fff', fontSize: '10px', borderRadius: '99px', padding: '1px 6px' }}>{friendRequests.length}</span>
+                <span style={{ background: '#0066b2', color: '#fff', fontSize: '10px', borderRadius: '99px', padding: '1px 6px' }}>{friendRequests.length}</span>
               </p>
               {friendRequests.map(req => (
-                <div key={req.id} style={{ background: d ? '#1e293b' : '#eff6ff', borderRadius: '8px', padding: '8px 10px', marginBottom: '4px', border: `1px solid ${d ? '#334155' : '#bfdbfe'}` }}>
+                <div key={req.id} style={{ background: d ? '#002a50' : '#dff0ff', borderRadius: '8px', padding: '8px 10px', marginBottom: '4px', border: `1px solid ${d ? '#003070' : '#99ccee'}` }}>
                   <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 600, color: textPrimary }}>
                     <UserPlus size={11} style={{ marginRight: '4px' }}/>{req.from_username} wants to connect
                   </p>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     <button onClick={() => handleAccept(req.id, req.from_username)}
-                      style={{ flex: 1, padding: '4px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                      style={{ flex: 1, padding: '4px', background: '#0066b2', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
                       <CheckCircle size={11}/> Accept
                     </button>
                     <button onClick={() => handleReject(req.id)}
@@ -532,17 +601,17 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
               {otherUsers.map(uid => (
                 <button key={uid} className="room-btn"
                   onClick={() => { setActiveRoom(uid); clearUnread(uid) }}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: activeRoom === uid ? (d ? '#1e3a5f' : '#eff6ff') : 'transparent', borderLeft: activeRoom === uid ? '3px solid #1d4ed8' : '3px solid transparent', marginBottom: '2px', textAlign: 'left', transition: 'all 0.15s' }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: activeRoom === uid ? (d ? '#003466' : '#dff0ff') : 'transparent', borderLeft: activeRoom === uid ? '3px solid #0066b2' : '3px solid transparent', marginBottom: '2px', textAlign: 'left', transition: 'all 0.15s' }}
                 >
                   <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: d ? '#334155' : '#eff6ff', color: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: d ? '#003070' : '#dff0ff', color: '#0066b2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>
                       {uid[0]?.toUpperCase()}
                     </div>
                     <div style={{ position: 'absolute', bottom: 0, right: 0, width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a', border: '2px solid ' + sidebarBg }}/>
                   </div>
-                  <span style={{ fontSize: '13px', fontWeight: 500, color: activeRoom === uid ? '#1d4ed8' : textPrimary, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uid}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: activeRoom === uid ? '#0066b2' : textPrimary, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uid}</span>
                   {unreadCounts[uid] > 0 && (
-                    <span style={{ background: '#1d4ed8', color: '#fff', fontSize: '11px', fontWeight: 700, width: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ background: '#0066b2', color: '#fff', fontSize: '11px', fontWeight: 700, width: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {unreadCounts[uid]}
                     </span>
                   )}
@@ -552,20 +621,23 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
               {allMembers
                 .filter(m => m.username !== user.username && !onlineSet.has(m.username))
                 .map(m => {
-                  const alreadySent = sentRequests.has(m.username)
+                  const alreadySent = sentRequests.has(m.username) || connectedUsers.has(m.username)
+                  const isConnected = connectedUsers.has(m.username)
                   return (
                     <div key={m.username} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: '8px', marginBottom: '2px', opacity: 0.65 }}>
                       <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: d ? '#334155' : '#e2e8f0', color: textMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: d ? '#003070' : '#e2e8f0', color: textMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>
                           {m.username[0]?.toUpperCase()}
                         </div>
                         <div style={{ position: 'absolute', bottom: 0, right: 0, width: '8px', height: '8px', borderRadius: '50%', background: '#94a3b8', border: '2px solid ' + sidebarBg }}/>
                       </div>
                       <span style={{ fontSize: '13px', color: textMuted, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.username}</span>
-                      {!alreadySent ? (
+                      {isConnected ? (
+                        <span style={{ fontSize: '10px', color: '#16a34a', flexShrink: 0 }}>Connected</span>
+                      ) : !alreadySent ? (
                         <button onClick={() => handleConnectRequest(m.username)}
                           title="Send connection request"
-                          style={{ width: '24px', height: '24px', borderRadius: '6px', border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1d4ed8', flexShrink: 0 }}>
+                          style={{ width: '24px', height: '24px', borderRadius: '6px', border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0066b2', flexShrink: 0 }}>
                           <UserPlus size={12}/>
                         </button>
                       ) : (
@@ -584,7 +656,7 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
           {/* Dark mode */}
           <button onClick={onToggleDark}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', border: `1px solid ${border}`, background: 'transparent', color: textMuted, fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginBottom: '8px', transition: 'all 0.2s' }}
-            onMouseEnter={e => e.currentTarget.style.background = d ? '#334155' : '#f1f5f9'}
+            onMouseEnter={e => e.currentTarget.style.background = d ? '#003070' : '#f1f5f9'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
             {darkMode ? <Sun size={15}/> : <Moon size={15}/>}
@@ -592,10 +664,8 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
           </button>
 
           {/* Sign out */}
-          <button onClick={() => onLogout('manual')}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #fecaca', background: d ? '#450a0a' : '#fef2f2', color: '#dc2626', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#fecaca'; e.currentTarget.style.transform = 'scale(1.01)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = d ? '#450a0a' : '#fef2f2'; e.currentTarget.style.transform = 'scale(1)' }}
+          <button onClick={() => onLogout('manual')} className="signout-btn"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', border: `1px solid ${border}`, background: 'transparent', color: textMuted, fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'inherit' }}
           >
             <LogOut size={14}/> Sign Out
           </button>
@@ -621,7 +691,7 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
 
             {isDM && activeRoom !== user.username && (
               <button onClick={() => setActiveRoom('general')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1d4ed8', padding: 0, display: 'flex', alignItems: 'center', transition: 'opacity 0.2s' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0066b2', padding: 0, display: 'flex', alignItems: 'center', transition: 'opacity 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '1'}
               >
@@ -629,62 +699,63 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
               </button>
             )}
 
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: activeRoom === user.username ? '#f0fdf4' : '#eff6ff', color: activeRoom === user.username ? '#16a34a' : '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
-              {activeRoom === 'general' ? '#' : activeRoom[0]?.toUpperCase()}
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: activeRoom === user.username ? '#f0fdf4' : '#dff0ff', color: activeRoom === user.username ? '#16a34a' : '#0066b2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
+              {activeRoom === 'general' || isCustomGroup ? '#' : activeRoom[0]?.toUpperCase()}
             </div>
             <div>
               <p style={{ fontSize: '14px', fontWeight: 700, color: textPrimary, margin: 0 }}>
-                {activeRoom === 'general' ? '# general'
-                  : activeRoom === user.username ? '📝 My Notes'
+                {activeRoom === 'general' ? 'general'
+                  : isCustomGroup ? (groups.find(g => g.id === activeRoom)?.name || activeRoom)
+                  : activeRoom === user.username ? 'My Notes'
                   : activeRoom}
               </p>
               <p style={{ fontSize: '12px', color: textMuted, margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Lock size={11}/>
                 {activeRoom === 'general' ? 'Parliament general channel'
+                  : isCustomGroup ? 'Encrypted group channel'
                   : activeRoom === user.username ? 'Private notes — only you can see this'
                   : 'End-to-end encrypted DM'}
               </p>
             </div>
           </div>
 
-          {/* Right side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button onClick={onToggleDark}
-              style={{ width: '34px', height: '34px', borderRadius: '8px', border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textMuted, transition: 'all 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.background = d ? '#334155' : '#f1f5f9'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              {darkMode ? <Sun size={15}/> : <Moon size={15}/>}
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: connected ? (d ? '#052e16' : '#f0fdf4') : (d ? '#450a0a' : '#fef2f2'), border: `1px solid ${connected ? '#bbf7d0' : '#fecaca'}`, borderRadius: '99px', padding: '6px 14px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: connected ? '#16a34a' : '#dc2626' }}/>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: connected ? '#16a34a' : '#dc2626' }}>
-                {connected ? 'Secure' : 'Connecting...'}
-              </span>
-            </div>
+          {/* Right side — subtle connection dot only */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div title={connected ? 'Connected' : 'Reconnecting…'}
+              style={{ width: '8px', height: '8px', borderRadius: '50%', background: connected ? '#16a34a' : '#f59e0b', flexShrink: 0, boxShadow: connected ? '0 0 6px rgba(22,163,74,0.5)' : '0 0 6px rgba(245,158,11,0.5)', transition: 'all 0.4s' }}/>
           </div>
         </div>
 
         {/* Messages */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px', background: msgAreaBg, transition: 'background 0.3s' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px', background: msgAreaBg, transition: 'background 0.3s', position: 'relative' }}>
+          {/* Parliament watermark */}
+          <img src="/parliament-logo.png" alt="" style={{
+            position: 'absolute', bottom: '12%', right: '4%',
+            width: 'clamp(80px, 15vw, 160px)', height: 'auto',
+            objectFit: 'contain', pointerEvents: 'none',
+            opacity: d ? 0.04 : 0.06,
+            filter: d ? 'brightness(0) invert(1)' : 'saturate(0)',
+            zIndex: 0,
+          }}/>
+
           {currentMessages.length === 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: d ? '#1e293b' : '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: d ? '#002a50' : '#dff0ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
                 {activeRoom === user.username
-                  ? <span style={{ fontSize: '28px' }}>📝</span>
-                  : <Lock size={28} color="#1d4ed8"/>
+                  ? <MessageSquare size={28} color="#16a34a"/>
+                  : <Lock size={28} color="#0066b2"/>
                 }
               </div>
               <p style={{ fontSize: '16px', fontWeight: 700, color: textPrimary, margin: '0 0 8px' }}>
                 {activeRoom === 'general' ? 'Welcome to Parliament SecureChat'
+                  : isCustomGroup ? `Welcome to ${groups.find(g => g.id === activeRoom)?.name || activeRoom}`
                   : activeRoom === user.username ? 'Your private notes'
                   : `Start a secure conversation with ${activeRoom}`}
               </p>
               <p style={{ fontSize: '13px', color: textMuted, margin: '0 0 4px' }}>
                 {activeRoom === user.username
-                  ? '✏️ Write notes, save links, keep reminders — only visible to you'
-                  : '🔐 Messages are end-to-end encrypted'}
+                  ? 'Write notes, save links, keep reminders — only visible to you'
+                  : 'Messages are end-to-end encrypted'}
               </p>
               {activeRoom !== user.username && (
                 <p style={{ fontSize: '12px', color: d ? '#475569' : '#94a3b8', margin: 0 }}>
@@ -694,43 +765,44 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
             </div>
           )}
 
-          {currentMessages.map((msg, i) => (
-            <div key={msg.id || i} style={{ animation: 'fadeMsg 0.3s ease' }}>
-              <MessageBubble
-                msg={msg}
-                isOwn={msg.from === user.username}
-                darkMode={darkMode}
-                onDelete={handleDelete}
-                onEdit={handleEdit}
-              />
-            </div>
-          ))}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {currentMessages.map((msg, i) => (
+              <div key={msg.id || i} style={{ animation: 'fadeMsg 0.3s ease' }}>
+                <MessageBubble
+                  msg={msg}
+                  isOwn={msg.from === user.username}
+                  darkMode={darkMode}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                />
+              </div>
+            ))}
 
-          {whoIsTyping && <TypingIndicator name={whoIsTyping} darkMode={darkMode}/>}
-          <div ref={messagesEndRef}/>
+            {whoIsTyping && <TypingIndicator name={whoIsTyping} darkMode={darkMode}/>}
+            <div ref={messagesEndRef}/>
+          </div>
         </div>
 
         {/* Notification toast */}
         {notification && (
-          <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, background: notification.type === 'error' ? '#dc2626' : notification.type === 'success' ? '#16a34a' : '#1d4ed8', color: '#fff', padding: '10px 20px', borderRadius: '99px', fontSize: '13px', fontWeight: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.2)', whiteSpace: 'nowrap' }}>
+          <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, background: notification.type === 'error' ? '#dc2626' : notification.type === 'success' ? '#16a34a' : '#0066b2', color: '#fff', padding: '10px 20px', borderRadius: '99px', fontSize: '13px', fontWeight: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.2)', whiteSpace: 'nowrap' }}>
             {notification.msg}
           </div>
         )}
 
         {/* Input area */}
-        <div style={{ background: inputAreaBg, borderTop: `1px solid ${border}`, padding: '16px 20px', flexShrink: 0, transition: 'background 0.3s' }}>
+        <div className="input-area" style={{ background: inputAreaBg, borderTop: `1px solid ${border}`, padding: '12px 16px', flexShrink: 0, transition: 'background 0.3s' }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
             {/* File attach button */}
             <input ref={fileInputRef} type="file" style={{ display: 'none' }} onChange={handleFileSelect} accept="image/*,.pdf,.doc,.docx,.txt,.xlsx,.pptx" />
             <button
+              className="attach-btn input-btn"
               onClick={() => fileInputRef.current?.click()}
               disabled={!connected || uploading}
               title="Attach file"
-              style={{ width: '46px', height: '46px', borderRadius: '12px', border: `1px solid ${border}`, background: 'transparent', cursor: connected && !uploading ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', color: uploading ? '#1d4ed8' : textMuted, flexShrink: 0, transition: 'all 0.2s' }}
-              onMouseEnter={e => { if (connected) e.currentTarget.style.background = d ? '#334155' : '#f1f5f9' }}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              style={{ width: '46px', height: '46px', borderRadius: '12px', border: `1px solid ${border}`, background: 'transparent', cursor: connected && !uploading ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', color: uploading ? '#0066b2' : textMuted, flexShrink: 0, transition: 'all 0.2s' }}
             >
-              {uploading ? <div style={{ width: '18px', height: '18px', border: '2px solid #1d4ed8', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/> : <Paperclip size={18}/>}
+              {uploading ? <div style={{ width: '18px', height: '18px', border: '2px solid #0066b2', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/> : <Paperclip size={18}/>}
             </button>
 
             <div style={{ flex: 1, position: 'relative' }}>
@@ -742,11 +814,12 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
                 placeholder={
                   activeRoom === user.username ? 'Write a note to yourself...'
                   : isDM ? `Message ${activeRoom}...`
+                  : isCustomGroup ? `Message #${groups.find(g => g.id === activeRoom)?.name || activeRoom}...`
                   : 'Message #general...'
                 }
                 rows={1}
-                style={{ width: '100%', padding: '12px 16px', fontSize: '14px', border: `1px solid ${border}`, borderRadius: '12px', outline: 'none', resize: 'none', color: inputColor, background: inputBg, boxSizing: 'border-box', minHeight: '46px', maxHeight: '120px', fontFamily: 'inherit', lineHeight: 1.5, transition: 'all 0.2s' }}
-                onFocus={e => { e.target.style.borderColor = '#1d4ed8'; e.target.style.boxShadow = '0 0 0 3px rgba(29,78,216,0.1)' }}
+                style={{ width: '100%', padding: '13px 16px', fontSize: '14px', border: `1px solid ${border}`, borderRadius: '12px', outline: 'none', resize: 'none', color: inputColor, background: inputBg, boxSizing: 'border-box', minHeight: '46px', maxHeight: '120px', fontFamily: 'inherit', lineHeight: '20px', transition: 'border-color 0.2s, box-shadow 0.2s', display: 'block' }}
+                onFocus={e => { e.target.style.borderColor = '#0066b2'; e.target.style.boxShadow = '0 0 0 3px rgba(0,102,178,0.12)' }}
                 onBlur={e => { e.target.style.borderColor = border; e.target.style.boxShadow = 'none' }}
                 onInput={e => {
                   e.target.style.height = 'auto'
@@ -757,17 +830,24 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
             <button
               onClick={handleSend}
               disabled={!input.trim() || !connected}
-              className="send-btn"
-              style={{ width: '46px', height: '46px', borderRadius: '12px', border: 'none', background: input.trim() && connected ? 'linear-gradient(135deg, #1d4ed8, #3b82f6)' : (d ? '#334155' : '#e2e8f0'), color: input.trim() && connected ? '#fff' : (d ? '#64748b' : '#94a3b8'), cursor: input.trim() && connected ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s', boxShadow: input.trim() && connected ? '0 4px 12px rgba(29,78,216,0.3)' : 'none' }}
+              className="send-btn input-btn"
+              style={{ width: '46px', height: '46px', borderRadius: '12px', border: 'none', background: input.trim() && connected ? 'linear-gradient(135deg, #0066b2, #1a80cc)' : (d ? '#003070' : '#dce9f7'), color: input.trim() && connected ? '#fff' : (d ? '#64748b' : '#94a3b8'), cursor: input.trim() && connected ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: input.trim() && connected ? '0 4px 12px rgba(0,102,178,0.35)' : 'none' }}
             >
               <Send size={18}/>
             </button>
           </div>
-          <p style={{ fontSize: '11px', color: d ? '#475569' : '#94a3b8', textAlign: 'center', margin: '8px 0 0' }}>
-            Press Enter to send · Attach files with the paperclip
-          </p>
         </div>
       </div>
+
+      {showCreateGroup && (
+        <CreateGroupModal
+          allMembers={allMembers}
+          currentUser={user}
+          darkMode={darkMode}
+          onClose={() => setShowCreateGroup(false)}
+          onCreate={handleCreateGroup}
+        />
+      )}
     </div>
   )
 }
