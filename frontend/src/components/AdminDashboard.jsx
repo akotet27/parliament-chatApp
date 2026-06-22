@@ -46,11 +46,18 @@ function StatCard({ icon: Icon, label, value, color, dark }) {
 }
 
 // ── Reset link modal ──────────────────────────────────────
-function ResetLinkModal({ user, onClose, authApi }) {
+function ResetLinkModal({ user, onClose, authApi, dark }) {
   const [link, setLink]       = useState('')
   const [loading, setLoading] = useState(true)
   const [copied, setCopied]   = useState(false)
   const [err, setErr]         = useState('')
+
+  const d          = dark
+  const modalBg    = d ? '#112038' : '#ffffff'
+  const textHead   = d ? '#e6f4ff' : '#002244'
+  const textMuted  = d ? '#5b8ab8' : '#64748b'
+  const inputBg    = d ? '#061220' : '#f0f8ff'
+  const inputBdr   = d ? 'rgba(0,102,178,0.3)' : '#dde4f0'
 
   useEffect(() => {
     const generate = async () => {
@@ -68,20 +75,39 @@ function ResetLinkModal({ user, onClose, authApi }) {
   const handleCopy = () => {
     navigator.clipboard.writeText(link).then(() => {
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setTimeout(() => setCopied(false), 2500)
     })
   }
 
+  const handleEmail = () => {
+    const subject = encodeURIComponent('Parliament SecureChat — Password Reset')
+    const body = encodeURIComponent(
+      `Dear ${user.username},\n\nA password reset has been initiated for your Parliament SecureChat account.\n\nClick the link below to set your new password (expires in 24 hours):\n${link}\n\nDo not share this link with anyone. It can only be used once.\n\nParliament SecureChat Admin`
+    )
+    window.open(`mailto:${user.email}?subject=${subject}&body=${body}`)
+  }
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', maxWidth: '480px', width: '100%', boxShadow: '0 8px 40px rgba(0,0,0,0.2)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ background: modalBg, borderRadius: '16px', padding: '28px', maxWidth: '500px', width: '100%', boxShadow: '0 8px 40px rgba(0,0,0,0.35)', border: `1px solid ${inputBdr}` }}>
+
+        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#002244', margin: 0 }}>Password Reset Link</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={18}/></button>
+          <h3 style={{ fontSize: '16px', fontWeight: 800, color: textHead, margin: 0 }}>Password Reset Link</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: textMuted }}><X size={18}/></button>
         </div>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 16px', lineHeight: 1.6 }}>
-          Share this link with <strong style={{ color: '#002244' }}>{user.username}</strong> via a secure channel. The link expires in 24 hours and can only be used once.
+
+        {/* Recipient info */}
+        <div style={{ background: d ? 'rgba(0,102,178,0.1)' : '#f0f8ff', border: `1px solid ${d ? 'rgba(0,102,178,0.25)' : 'rgba(0,102,178,0.15)'}`, borderRadius: '10px', padding: '12px 14px', marginBottom: '16px' }}>
+          <p style={{ fontSize: '12px', color: textMuted, margin: '0 0 4px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Recipient</p>
+          <p style={{ fontSize: '14px', fontWeight: 700, color: textHead, margin: '0 0 2px' }}>{user.username}</p>
+          <p style={{ fontSize: '12px', color: BLUE, margin: 0 }}>{user.email}</p>
+        </div>
+
+        <p style={{ fontSize: '13px', color: textMuted, margin: '0 0 14px', lineHeight: 1.6 }}>
+          The link below expires in <strong style={{ color: textHead }}>24 hours</strong> and can only be used once. Send it to the user via email or another secure channel.
         </p>
+
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
             <div style={{ width: '24px', height: '24px', border: '3px solid #e2e8f0', borderTop: `3px solid ${BLUE}`, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
@@ -89,16 +115,32 @@ function ResetLinkModal({ user, onClose, authApi }) {
         ) : err ? (
           <p style={{ color: '#dc2626', fontSize: '13px' }}>{err}</p>
         ) : (
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input readOnly value={link} style={{ flex: 1, padding: '10px 12px', fontSize: '12px', border: '1px solid #dde4f0', borderRadius: '8px', outline: 'none', color: '#002244', background: '#f0f8ff', fontFamily: 'monospace' }}/>
-            <button onClick={handleCopy}
-              style={{ padding: '10px 14px', background: copied ? '#16a34a' : BLUE, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', transition: 'background 0.2s' }}>
-              {copied ? <><Check size={13}/> Copied</> : <><Copy size={13}/> Copy</>}
+          <>
+            {/* Link row */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <input readOnly value={link}
+                style={{ flex: 1, padding: '10px 12px', fontSize: '12px', border: `1px solid ${inputBdr}`, borderRadius: '8px', outline: 'none', color: textHead, background: inputBg, fontFamily: 'monospace', minWidth: 0 }}
+                onFocus={e => e.target.select()}
+              />
+              <button onClick={handleCopy}
+                style={{ padding: '10px 14px', background: copied ? '#16a34a' : BLUE, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', transition: 'background 0.2s', flexShrink: 0 }}>
+                {copied ? <><Check size={13}/> Copied!</> : <><Copy size={13}/> Copy</>}
+              </button>
+            </div>
+
+            {/* Send by email button */}
+            <button onClick={handleEmail}
+              style={{ width: '100%', padding: '11px', background: 'transparent', border: `1.5px solid ${BLUE}`, borderRadius: '8px', color: BLUE, fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', fontFamily: 'inherit', transition: 'background 0.18s' }}
+              onMouseEnter={e => e.currentTarget.style.background = d ? 'rgba(0,102,178,0.15)' : 'rgba(0,102,178,0.07)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <Link size={14}/> Send Reset Email to {user.email}
             </button>
-          </div>
+          </>
         )}
-        <p style={{ fontSize: '11px', color: '#94a3b8', margin: '12px 0 0' }}>
-          The user will use this link to set their own password without requiring admin access.
+
+        <p style={{ fontSize: '11px', color: d ? '#334f70' : '#94a3b8', margin: '12px 0 0', lineHeight: 1.5 }}>
+          The user sets their own password using this link — you will never see or store their password.
         </p>
       </div>
     </div>
@@ -647,6 +689,7 @@ function AdminDashboard({ onLogout, auth, darkMode, onToggleDark }) {
           user={resetLinkTarget}
           authApi={auth.api}
           onClose={() => setResetLinkTarget(null)}
+          dark={darkMode}
         />
       )}
     </div>
