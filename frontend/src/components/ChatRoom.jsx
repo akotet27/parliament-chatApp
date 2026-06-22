@@ -250,6 +250,7 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
     if (friendRequestAccepted) {
       showNotif(`${friendRequestAccepted} accepted your connection request!`, 'success')
       setSentRequests(prev => { const s = new Set(prev); s.delete(friendRequestAccepted); return s })
+      setConnectedUsers(prev => new Set([...prev, friendRequestAccepted]))
     }
   }, [friendRequestAccepted])
 
@@ -408,6 +409,7 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
     try {
       await authApi.put(`/friends/requests/${requestId}/accept`)
       setFriendRequests(prev => prev.filter(r => r.id !== requestId))
+      setConnectedUsers(prev => new Set([...prev, fromUsername]))
       showNotif(`Connected with ${fromUsername}!`, 'success')
     } catch { showNotif('Could not accept request', 'error') }
   }
@@ -623,19 +625,40 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
                 .map(m => {
                   const alreadySent = sentRequests.has(m.username) || connectedUsers.has(m.username)
                   const isConnected = connectedUsers.has(m.username)
+                  const isActive    = activeRoom === m.username
+                  // Connected users are clickable to open DM; others are not
+                  const Tag = isConnected ? 'button' : 'div'
                   return (
-                    <div key={m.username} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', borderRadius: '8px', marginBottom: '2px', opacity: 0.65 }}>
+                    <Tag
+                      key={m.username}
+                      className={isConnected ? 'room-btn' : undefined}
+                      onClick={isConnected ? () => { setActiveRoom(m.username); clearUnread(m.username) } : undefined}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '8px 12px', borderRadius: '8px', marginBottom: '2px',
+                        opacity: isConnected ? 1 : 0.6,
+                        cursor: isConnected ? 'pointer' : 'default',
+                        background: isActive ? (d ? '#003466' : '#dff0ff') : 'transparent',
+                        borderLeft: isConnected ? (isActive ? '3px solid #0066b2' : '3px solid transparent') : 'none',
+                        border: isConnected ? undefined : 'none',
+                        textAlign: 'left',
+                        transition: 'all 0.15s',
+                        fontFamily: 'inherit',
+                      }}
+                    >
                       <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: d ? '#003070' : '#e2e8f0', color: textMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: d ? '#003070' : '#e2e8f0', color: isConnected ? '#0066b2' : textMuted, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>
                           {m.username[0]?.toUpperCase()}
                         </div>
                         <div style={{ position: 'absolute', bottom: 0, right: 0, width: '8px', height: '8px', borderRadius: '50%', background: '#94a3b8', border: '2px solid ' + sidebarBg }}/>
                       </div>
-                      <span style={{ fontSize: '13px', color: textMuted, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.username}</span>
+                      <span style={{ fontSize: '13px', color: isActive ? '#0066b2' : (isConnected ? textPrimary : textMuted), flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {m.username}
+                      </span>
                       {isConnected ? (
-                        <span style={{ fontSize: '10px', color: '#16a34a', flexShrink: 0 }}>Connected</span>
+                        <span style={{ fontSize: '10px', color: isActive ? '#0066b2' : '#16a34a', flexShrink: 0 }}>● offline</span>
                       ) : !alreadySent ? (
-                        <button onClick={() => handleConnectRequest(m.username)}
+                        <button onClick={(e) => { e.stopPropagation(); handleConnectRequest(m.username) }}
                           title="Send connection request"
                           style={{ width: '24px', height: '24px', borderRadius: '6px', border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0066b2', flexShrink: 0 }}>
                           <UserPlus size={12}/>
@@ -643,7 +666,7 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
                       ) : (
                         <span style={{ fontSize: '10px', color: textMuted, flexShrink: 0 }}>sent</span>
                       )}
-                    </div>
+                    </Tag>
                   )
                 })
               }
