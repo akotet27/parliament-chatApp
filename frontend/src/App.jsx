@@ -128,11 +128,13 @@ function App() {
     if (token) {
       auth.fetchMe()
         .then((user) => {
-          if (user) {
-            setScreen('chat')
-          } else {
-            setScreen('login')
-          }
+          if (!user) { setScreen('login'); return }
+          const role = user.role
+          if (role === 'admin')     setScreen('admin')
+          else if (role === 'member')    setScreen('chat')
+          else if (role === 'pending')   setScreen('pending')
+          else if (role === 'suspended') setScreen('suspended')
+          else setScreen('login')
         })
         .finally(() => setAppLoading(false))
     } else {

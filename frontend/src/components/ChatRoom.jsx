@@ -241,7 +241,7 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
     sendDeleteMessage, sendEditMessage, friendRequestAccepted,
   } = useWebSocket(user, fetchPublicKey)
 
-  const { timeLeft, showWarning, resetTimer } = useInactivity(
+  const { secondsLeft, showWarning, resetTimer } = useInactivity(
     () => onLogout('inactivity'), true
   )
 
@@ -469,7 +469,7 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
 
       {showWarning && (
         <InactivityWarning
-          timeLeft={timeLeft}
+          secondsLeft={secondsLeft}
           onStayLoggedIn={resetTimer}
           onLogoutNow={() => onLogout('manual')}
           darkMode={darkMode}

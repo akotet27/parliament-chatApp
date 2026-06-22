@@ -1,6 +1,6 @@
 import { AlertTriangle, LogOut, Activity } from 'lucide-react'
 
-function InactivityWarning({ timeLeft, onStayLoggedIn, onLogoutNow, darkMode }) {
+function InactivityWarning({ secondsLeft, onStayLoggedIn, onLogoutNow, darkMode }) {
   const d = darkMode
 
   const cardBg    = d ? 'rgba(14,22,40,0.97)' : 'rgba(255,255,255,0.98)'
@@ -8,7 +8,7 @@ function InactivityWarning({ timeLeft, onStayLoggedIn, onLogoutNow, darkMode }) 
   const textMuted   = d ? '#8496b0' : '#64748b'
   const border      = d ? 'rgba(239,68,68,0.35)' : 'rgba(239,68,68,0.3)'
 
-  const urgent = timeLeft <= 10
+  const urgent = secondsLeft <= 10
 
   return (
     <div style={{
@@ -94,10 +94,10 @@ function InactivityWarning({ timeLeft, onStayLoggedIn, onLogoutNow, darkMode }) 
                 fontSize: '54px', fontWeight: 900, color: '#ef4444',
                 fontFamily: 'monospace', lineHeight: 1, display: 'block',
               }}>
-                {timeLeft}
+                {secondsLeft}
               </span>
               <span style={{ fontSize: '11px', color: '#ef4444', opacity: 0.7, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                seconds remaining
+                {secondsLeft === 1 ? 'second' : 'seconds'} remaining
               </span>
             </div>
           </div>

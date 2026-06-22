@@ -109,8 +109,10 @@ export function useAuth() {
   const fetchMe = useCallback(async () => {
     try {
       const res = await api.get('/me')
-      setUser(res.data)
-      return res.data
+      const token = sessionStorage.getItem('parliament_token')
+      const userData = { ...res.data, token }
+      setUser(userData)
+      return userData
     } catch {
       logout('session_expired')
       return null

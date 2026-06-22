@@ -155,7 +155,7 @@ function RegisterScreen({ onRegister, onGoToLogin, loading, error, darkMode, onT
         width: 'clamp(280px, 52vw, 680px)', height: 'auto',
         objectFit: 'contain', pointerEvents: 'none',
         opacity: d ? 0.06 : 0.07,
-        filter: d ? 'brightness(1.4)' : 'saturate(0.2)',
+        filter: d ? 'brightness(0) invert(1)' : 'saturate(0.2)',
         animation: 'rs-float 12s ease-in-out infinite',
         zIndex: 0,
       }}/>
