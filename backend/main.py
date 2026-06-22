@@ -742,21 +742,12 @@ async def websocket_endpoint(ws: WebSocket, token: str):
     conn.commit()
     conn.close()
 
-    # Notify everyone
-    # user_joined broadcast
+    # Notify everyone that this user joined
     await manager.broadcast({
         "type": "user_joined",
         "username": username,
         "user_id": user_id,
-        "online_users": get_online_usernames()  # ← changed
-    })
-
-    # user_left broadcast  
-    await manager.broadcast({
-        "type": "user_left",
-        "username": username,
-        "user_id": user_id,
-        "online_users": get_online_usernames()  # ← changed
+        "online_users": get_online_usernames()
     })
 
     # Send message history (encrypted — server cannot read)
@@ -1088,6 +1079,6 @@ async def websocket_endpoint(ws: WebSocket, token: str):
             "type":         "user_left",
             "username":     username,
             "user_id":      user_id,
-            "online_users": manager.get_online_users()
+            "online_users": get_online_usernames()
         })
         log_activity(user_id, "disconnect")

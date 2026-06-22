@@ -255,12 +255,13 @@ export function useWebSocket(user, fetchPublicKey) {
   }, [user?.token])
 
   const sendGroupMessage = useCallback((text, room = 'general') => {
-    if (!ws.current || !text.trim()) return
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN || !text.trim()) return false
     const ciphertext = simpleEncrypt(text, GROUP_KEY)
     ws.current.send(JSON.stringify({
       type: 'group_message', room, ciphertext,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }))
+    return true
   }, [])
 
   const fetchGroupHistory = useCallback((roomId) => {
@@ -269,13 +270,14 @@ export function useWebSocket(user, fetchPublicKey) {
   }, [])
 
   const sendPrivateMessage = useCallback((toUsername, text) => {
-    if (!ws.current || !text.trim()) return
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN || !text.trim()) return false
     const key = `${user.username}-${toUsername}-dm`
     const ciphertext = simpleEncrypt(text, key)
     ws.current.send(JSON.stringify({
       type: 'private_message', to: toUsername, ciphertext,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }))
+    return true
   }, [user?.username])
 
   const sendTyping = useCallback((to = 'general') => {

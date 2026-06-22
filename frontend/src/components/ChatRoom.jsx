@@ -264,29 +264,28 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
     }
   }, [pendingFriendRequests])
 
-  // Fetch all members on mount
+  // Fetch all members on mount — use allSettled so one 404 doesn't block the rest
   useEffect(() => {
     const load = async () => {
       if (!authApi) return
-      try {
-        const [membersRes, reqRes, sentRes, groupsRes, connectionsRes] = await Promise.all([
-          authApi.get('/users'),
-          authApi.get('/friends/requests'),
-          authApi.get('/friends/sent'),
-          authApi.get('/groups'),
-          authApi.get('/friends/connections'),
-        ])
-        setAllMembers(membersRes.data)
-        // Merge so real-time WebSocket requests aren't overwritten
+      const [membersRes, reqRes, sentRes, groupsRes, connectionsRes] = await Promise.allSettled([
+        authApi.get('/users'),
+        authApi.get('/friends/requests'),
+        authApi.get('/friends/sent'),
+        authApi.get('/groups'),
+        authApi.get('/friends/connections'),
+      ])
+      if (membersRes.status === 'fulfilled') setAllMembers(membersRes.value.data)
+      if (reqRes.status === 'fulfilled') {
         setFriendRequests(prev => {
           const existingIds = new Set(prev.map(r => r.id))
-          const newOnes = reqRes.data.filter(r => !existingIds.has(r.id))
+          const newOnes = reqRes.value.data.filter(r => !existingIds.has(r.id))
           return [...prev, ...newOnes]
         })
-        setSentRequests(new Set(sentRes.data.map(r => r.to_username)))
-        setGroups(groupsRes.data || [])
-        setConnectedUsers(new Set(connectionsRes.data || []))
-      } catch {}
+      }
+      if (sentRes.status === 'fulfilled') setSentRequests(new Set(sentRes.value.data.map(r => r.to_username)))
+      if (groupsRes.status === 'fulfilled') setGroups(groupsRes.value.data || [])
+      if (connectionsRes.status === 'fulfilled') setConnectedUsers(new Set(connectionsRes.value.data || []))
     }
     load()
   }, [authApi])
@@ -340,13 +339,14 @@ function ChatRoom({ user, onLogout, fetchPublicKey, darkMode, onToggleDark, auth
     setTimeout(() => setNotification(null), 3500)
   }
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!input.trim()) return
-    if (isDM) await sendPrivateMessage(activeRoom, input)
-    else await sendGroupMessage(input, activeRoom)
-    setInput('')
-    sendStopTyping(activeRoom)
-    isTypingRef.current = false
+    const sent = isDM ? sendPrivateMessage(activeRoom, input) : sendGroupMessage(input, activeRoom)
+    if (sent) {
+      setInput('')
+      sendStopTyping(activeRoom)
+      isTypingRef.current = false
+    }
   }
 
   const handleKey = (e) => {
