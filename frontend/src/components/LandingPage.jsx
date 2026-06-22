@@ -72,17 +72,8 @@ function LandingPage({ onEnterPortal, darkMode, onToggleDark }) {
         .lp-toggle { transition: all 0.2s; }
         .lp-toggle:hover { background: ${d ? 'rgba(255,255,255,0.15)' : 'rgba(0,102,178,0.12)'} !important; }
 
-        .lp-enter-pill {
-          padding: 9px 22px; border-radius: 7px; border: none;
-          font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
-          background: ${blue}; color: #fff; letter-spacing: 0.02em;
-          transition: background 0.18s;
-        }
-        .lp-enter-pill:hover { background: ${blueLt}; }
-
         @media (max-width: 640px) {
           .lp-hero-h1 { font-size: clamp(34px,10vw,52px) !important; letter-spacing: -0.8px !important; }
-          .lp-desktop { display: none !important; }
           .lp-mob-btn { display: flex !important; }
           .lp-feat-row { grid-template-columns: repeat(2, 1fr) !important; }
         }
@@ -145,13 +136,6 @@ function LandingPage({ onEnterPortal, darkMode, onToggleDark }) {
               FDRE · House of Peoples' Representatives
             </div>
           </div>
-        </div>
-
-        {/* Desktop right — Sign In only, hidden on mobile */}
-        <div className="lp-desktop" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button onClick={onEnterPortal} className="lp-enter-pill">
-            Sign In
-          </button>
         </div>
 
         {/* Always-visible right: one toggle + mobile hamburger */}
